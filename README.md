@@ -81,13 +81,6 @@ DATABASE_URL=postgresql://user:password@host:5432/it_stock
 npm start
 ```
 
-### Default Logins
-
-| Role  | Username | Password | URL                          |
-| ----- | -------- | -------- | ---------------------------- |
-| Admin | admin    | admin123 | http://localhost:4050/login/admin |
-| User  | user     | user123  | http://localhost:4050/login       |
-
 ## Usage
 
 ### Admin Panel
