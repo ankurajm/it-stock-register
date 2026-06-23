@@ -24,6 +24,7 @@ app.use(helmet({
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('layout', 'layout');
+app.set('trust proxy', 1);
 app.use(layouts);
 
 app.use(express.static('public'));
