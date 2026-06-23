@@ -1,5 +1,7 @@
 require('dotenv').config();
 const path = require('path');
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const config = require('./app');
 
 let pool;
@@ -9,7 +11,7 @@ function getDB() {
     if (!pool) {
         const { Pool } = require('pg');
         const connectionString = process.env.DATABASE_URL || `postgresql://localhost:5432/it_stock`;
-        pool = new Pool({ connectionString, max: 10, family: 4 });
+        pool = new Pool({ connectionString, max: 10, ssl: { rejectUnauthorized: false } });
         console.log('PostgreSQL pool created');
     }
     return pool;
