@@ -105,7 +105,7 @@ async function generatePDF(data, columns, title, res) {
 
         let y = tableTop + 20;
         doc.font('Helvetica').fontSize(7);
-        data.forEach((row, rowIndex) => {
+        for (const [rowIndex, row] of data.entries()) {
             if (y > doc.page.height - 80) {
                 addReportFooter(doc);
                 doc.addPage();
@@ -128,7 +128,7 @@ async function generatePDF(data, columns, title, res) {
                 doc.fill('#000000').text(String(row[col] || ''), 30 + i * colWidth + 2, y, { width: colWidth - 4, align: 'left' });
             });
             y += 15;
-        });
+        }
 
         addReportFooter(doc);
         doc.end();
