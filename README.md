@@ -1,1 +1,1 @@
-# IT--Stock-mng
+# it-Stock-register
