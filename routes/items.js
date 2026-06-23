@@ -125,7 +125,7 @@ router.post('/add', requireAuth, upload.single('image'), validateCsrf, async (re
         res.redirect('/items');
     } catch (err) {
         console.error('Add item error:', err.message);
-        const categories = all(`SELECT * FROM categories ORDER BY name`);
+        const categories = await all(`SELECT * FROM categories ORDER BY name`);
         const errorMsg = err.message.includes('UNIQUE') ? 'Asset tag already exists!' : 'Failed to add item';
         res.render('items/add', { error: errorMsg, item: null, categories, nextTag: '', selectedCategoryId: '' });
     }
