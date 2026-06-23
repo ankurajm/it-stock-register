@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 router.get('/login', (req, res) => {
     if (req.session.user) return res.redirect('/');
-    res.render('login', { layout: false, error: req.flash('error')[0] || null });
+    res.render('login', { layout: false, error: res.locals.error_msg ? res.locals.error_msg[0] : null });
 });
 
 router.post('/login', require('express-rate-limit')({
@@ -37,7 +37,7 @@ router.post('/login', require('express-rate-limit')({
 
 router.get('/login/admin', (req, res) => {
     if (req.session.user) return res.redirect('/');
-    res.render('login-admin', { layout: false, error: req.flash('error')[0] || null });
+    res.render('login-admin', { layout: false, error: res.locals.error_msg ? res.locals.error_msg[0] : null });
 });
 
 router.post('/login/admin', require('express-rate-limit')({
