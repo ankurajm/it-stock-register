@@ -186,7 +186,7 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
         doc.fillColor('#000');
 
         let y = doc.y + 4;
-        rows.forEach((row, idx) => {
+        for (const [idx, row] of rows.entries()) {
             if (y > doc.page.height - 60) {
                 doc.addPage();
                 y = 30;
@@ -202,7 +202,7 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
             if (row.username) {
                 const password = generatePassword();
                 const hashed = bcrypt.hashSync(password, 8);
-                run(`UPDATE users SET password = ? WHERE username = ?`, [hashed, row.username]);
+                await run(`UPDATE users SET password = ? WHERE username = ?`, [hashed, row.username]);
                 doc.fontSize(7).font('Helvetica');
                 doc.text(row.emp_id || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
                 doc.text(row.name || '-', colX[1] + 4, y, { width: colX[2] - colX[1] - 8 });
@@ -219,7 +219,7 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
                 doc.fillColor('#000');
             }
             y += 16;
-        });
+        }
 
         doc.end();
     } catch (err) {
@@ -247,7 +247,7 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
             { header: 'Initials', key: 'initials', width: 10 }
         ];
 
-        rows.forEach(row => {
+        for (const row of rows) {
             const data = {
                 emp_id: row.emp_id,
                 name: row.name,
@@ -264,7 +264,7 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
                 data.password = password;
             }
             sheet.addRow(data);
-        });
+        }
 
         const headerRow = sheet.getRow(1);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
