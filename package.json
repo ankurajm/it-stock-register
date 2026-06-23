@@ -1,0 +1,44 @@
+{
+  "name": "it-stock-register",
+  "version": "1.0.0",
+  "description": "IT Stock Register - Complete IT Asset Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node database/seed.js",
+    "backup": "node utils/backup.js",
+    "reset-password": "node reset-password.js"
+  },
+  "keywords": [
+    "it",
+    "stock",
+    "asset",
+    "management",
+    "inventory"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.11.1",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-rate-limit": "^8.5.2",
+    "express-session": "^1.19.0",
+    "helmet": "^8.2.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pdfkit": "^0.15.2",
+    "pg": "^8.22.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

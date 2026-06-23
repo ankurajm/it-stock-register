@@ -1,0 +1,74 @@
+<% title = 'School Settings' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-gear me-2"></i> School Settings</h4>
+        <small class="text-muted">Configure school name, address &amp; logo for reports</small>
+    </div>
+    <a href="/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="POST" action="/settings" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">School Name <span class="text-danger">*</span></label>
+                    <input type="text" name="school_name" class="form-control" value="<%= settings ? settings.school_name : '' %>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Academic Session</label>
+                    <input type="text" name="academic_session" class="form-control" value="<%= settings ? settings.academic_session : '' %>" placeholder="e.g. 2025-26 (auto if empty)">
+                    <div class="form-text">Auto-calculated from current date if left empty</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Sub-heading</label>
+                    <input type="text" name="sub_heading" class="form-control" value="<%= settings ? settings.sub_heading : '' %>" placeholder="e.g. (Managed by Mayo College General Council, Ajmer)">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control" value="<%= settings ? settings.phone : '' %>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="<%= settings ? settings.email : '' %>">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Address</label>
+                    <input type="text" name="address" class="form-control" value="<%= settings ? settings.address : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">City</label>
+                    <input type="text" name="city" class="form-control" value="<%= settings ? settings.city : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">State</label>
+                    <input type="text" name="state" class="form-control" value="<%= settings ? settings.state : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Pincode</label>
+                    <input type="text" name="pincode" class="form-control" value="<%= settings ? settings.pincode : '' %>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">School Logo</label>
+                    <input type="file" name="school_logo" class="form-control" accept="image/*">
+                    <div class="form-text">Appears on PDF reports. Recommended: 200x200px max.</div>
+                    <% if (settings && settings.school_logo) { %>
+                    <div class="mt-2">
+                        <img src="/uploads/<%= settings.school_logo %>" style="max-height: 50px;" class="border rounded">
+                        <small class="text-muted ms-1">Current logo</small>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Settings</button>
+                <a href="/" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

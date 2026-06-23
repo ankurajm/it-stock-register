@@ -1,0 +1,89 @@
+<% title = 'My Dashboard' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-speedometer2 me-2"></i> My Dashboard</h4>
+        <small class="text-muted">Welcome, <strong><%= user.initials || user.username %></strong></small>
+    </div>
+    <span class="badge bg-primary fs-6 px-3 py-2"><i class="bi bi-person-circle me-1"></i> <%= user.username %></span>
+</div>
+
+<% if (allocations.length > 0) { %>
+<div class="alert alert-success d-flex align-items-center border-start border-success border-4">
+    <i class="bi bi-check-circle fs-4 me-3"></i>
+    <div><strong><%= allocations.length %> item(s)</strong> currently issued to you</div>
+</div>
+<% } else { %>
+<div class="alert alert-info d-flex align-items-center border-start border-info border-4">
+    <i class="bi bi-info-circle fs-4 me-3"></i>
+    <div>No items are currently issued to you</div>
+</div>
+<% } %>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="/reports/my-items" class="btn btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> No Dues Certificate</a>
+    <a href="/reports/my-items/pdf" class="btn btn-outline-danger" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i> Download PDF</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="stat-card blue">
+            <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+            <div class="stat-number"><%= allocations.length %></div>
+            <div class="stat-label">Currently Issued</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card teal">
+            <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-number"><%= history.length %></div>
+            <div class="stat-label">Total History</div>
+        </div>
+    </div>
+</div>
+
+<% if (allocations.length > 0) { %>
+<div class="card mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-check-circle me-1"></i> Currently Issued Items</div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Asset Tag</th><th>Category</th><th>Brand</th><th>Model</th><th>Serial No.</th><th>Allocated Date</th><th>Status</th></tr></thead>
+            <tbody>
+                <% allocations.forEach(a => { %>
+                <tr>
+                    <td class="fw-medium"><%= a.asset_tag || '-' %></td>
+                    <td><%= a.category || '-' %></td>
+                    <td><%= a.brand || '-' %></td>
+                    <td><%= a.model || '-' %></td>
+                    <td><code><%= a.serial_number || '-' %></code></td>
+                    <td><%= a.allocated_date %></td>
+                    <td><span class="badge bg-<%= a.item_status === 'allocated' ? 'warning text-dark' : 'secondary' %>"><%= a.item_status || 'allocated' %></span></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% } %>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-clock-history me-1"></i> Allocation History</div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Asset Tag</th><th>Category</th><th>Allocated</th><th>Returned</th><th>Status</th></tr></thead>
+            <tbody>
+                <% if (history.length === 0) { %>
+                <tr><td colspan="5" class="text-center text-muted py-4">No history</td></tr>
+                <% } %>
+                <% history.forEach(a => { %>
+                <tr>
+                    <td class="fw-medium"><%= a.asset_tag || '-' %></td>
+                    <td><%= a.category || '-' %></td>
+                    <td><%= a.allocated_date %></td>
+                    <td><%= a.return_date || '-' %></td>
+                    <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>

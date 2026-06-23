@@ -1,0 +1,88 @@
+<% title = 'Maintenance' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-tools me-2"></i> Maintenance Log</h4>
+        <small class="text-muted"><%= typeof totalItems !== 'undefined' ? totalItems : records.length %> record(s)</small>
+    </div>
+    <a href="/maintenance/add" class="btn btn-danger"><i class="bi bi-plus-lg"></i> Log Issue</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-2">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="pending" <%= status === 'pending' ? 'selected' : '' %>>Pending</option>
+                    <option value="in-progress" <%= status === 'in-progress' ? 'selected' : '' %>>In Progress</option>
+                    <option value="resolved" <%= status === 'resolved' ? 'selected' : '' %>>Resolved</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Asset Tag</th><th>Issue Date</th><th class="d-none d-md-table-cell">Issue</th><th class="d-none d-lg-table-cell">Vendor</th><th class="d-none d-lg-table-cell">Cost</th><th>Status</th><th class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+                <% if (records.length === 0) { %>
+                <tr><td colspan="7" class="text-center text-muted py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i> No maintenance records</td></tr>
+                <% } %>
+                <% records.forEach(r => { %>
+                <tr>
+                    <td class="fw-medium"><%= r.asset_tag || '-' %></td>
+                    <td><%= r.issue_date %></td>
+                    <td class="d-none d-md-table-cell"><%= r.issue_description ? r.issue_description.substring(0, 40) + (r.issue_description.length > 40 ? '...' : '') : '-' %></td>
+                    <td class="d-none d-lg-table-cell"><%= r.vendor || '-' %></td>
+                    <td class="d-none d-lg-table-cell">&#8377;<%= r.cost || '-' %></td>
+                    <td>
+                        <% if (r.status === 'resolved') { %><span class="badge bg-success">Resolved</span>
+                        <% } else if (r.status === 'in-progress') { %><span class="badge bg-info">In Progress</span>
+                        <% } else { %><span class="badge bg-danger">Pending</span><% } %>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="/maintenance/<%= r.id %>" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
+                            <a href="/maintenance/edit/<%= r.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <% if (r.status !== 'resolved') { %>
+                            <form method="POST" action="/maintenance/<%= r.id %>/resolve" style="display:inline">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <input type="hidden" name="resolution_date" value="<%= new Date().toISOString().split('T')[0] %>">
+                                <button type="submit" class="btn btn-outline-success" title="Resolve"><i class="bi bi-check-lg"></i></button>
+                            </form>
+                            <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+        <small class="text-muted">Page <%= currentPage %> of <%= totalPages %> (<%= totalItems %> records)</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= currentPage - 1 %><%= status ? '&status=' + encodeURIComponent(status) : '' %>">Previous</a>
+                </li>
+                <% for (let p = Math.max(1, currentPage - 2); p <= Math.min(totalPages, currentPage + 2); p++) { %>
+                <li class="page-item <%= p === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= p %><%= status ? '&status=' + encodeURIComponent(status) : '' %>"><%= p %></a>
+                </li>
+                <% } %>
+                <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %><%= status ? '&status=' + encodeURIComponent(status) : '' %>">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <% } %>
+</div>

@@ -1,0 +1,93 @@
+<% title = 'My Issued Items' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-check me-2"></i> My Issued Items</h4>
+        <small class="text-muted">View your allocated items and download items record</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/reports/my-items/pdf" class="btn btn-primary" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Download Items Record PDF</a>
+        <a href="/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+<% if (activeItems.length > 0) { %>
+<div class="alert alert-warning d-flex align-items-center border-start border-warning border-4">
+    <i class="bi bi-exclamation-triangle fs-4 me-3"></i>
+    <div>
+        <strong><%= activeItems.length %> item(s)</strong> currently issued to you.
+        Please return them to the IT department before leaving.
+    </div>
+</div>
+<% } else { %>
+<div class="alert alert-success d-flex align-items-center border-start border-success border-4">
+    <i class="bi bi-check-circle fs-4 me-3"></i>
+    <div><strong>No items currently issued.</strong></div>
+</div>
+<% } %>
+
+<div class="card mb-4">
+    <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-box-seam me-1"></i> Currently Issued Items (<%= activeItems.length %>)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Asset Tag</th><th>Category</th><th>Brand</th><th>Model</th><th>Serial No.</th><th>Allocated Date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <% if (activeItems.length === 0) { %>
+                <tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-check-circle me-1"></i> No items issued</td></tr>
+                <% } %>
+                <% activeItems.forEach(a => { %>
+                <tr>
+                    <td class="fw-medium"><%= a.asset_tag || '-' %></td>
+                    <td><%= a.category || '-' %></td>
+                    <td><%= a.brand || '-' %></td>
+                    <td><%= a.model || '-' %></td>
+                    <td><code><%= a.serial_number || '-' %></code></td>
+                    <td><%= a.allocated_date %></td>
+                    <td><span class="badge bg-warning text-dark">Issued</span></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<% if (items.length > 0) { %>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-1"></i> Returned Items (<%= items.length - activeItems.length %>)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Asset Tag</th><th>Category</th><th>Allocated</th><th>Returned</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <% if (items.length === activeItems.length) { %>
+                <tr><td colspan="5" class="text-center text-muted py-4">No returned items</td></tr>
+                <% } %>
+                <% items.filter(a => a.status === 'returned').forEach(a => { %>
+                <tr>
+                    <td class="fw-medium"><%= a.asset_tag || '-' %></td>
+                    <td><%= a.category || '-' %></td>
+                    <td><%= a.allocated_date %></td>
+                    <td><%= a.return_date || '-' %></td>
+                    <td><span class="badge bg-success">Returned</span></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% } %>
+
+<div class="card border-primary">
+    <div class="card-body text-center py-4">
+        <i class="bi bi-file-earmark-pdf fs-1 text-primary d-block mb-3"></i>
+        <h5 class="fw-bold">Items Record</h5>
+        <p class="text-muted small">Download a PDF record of all items issued and returned. For no-dues clearance, please contact the IT administrator.</p>
+        <a href="/reports/my-items/pdf" class="btn btn-primary btn-lg" target="_blank"><i class="bi bi-file-earmark-pdf me-2"></i> Download Items Record PDF</a>
+    </div>
+</div>

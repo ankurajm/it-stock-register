@@ -1,0 +1,65 @@
+<% title = 'Bulk Import Users' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-upload me-2"></i> Bulk Import Users</h4>
+        <small class="text-muted">Import multiple users from a CSV file</small>
+    </div>
+    <a href="/users" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (success && results && results.length > 0) { %>
+<div class="alert alert-success"><i class="bi bi-check-circle me-1"></i> <%= success %></div>
+<div class="card mb-4">
+    <div class="card-header bg-success text-white"><i class="bi bi-person-badge me-1"></i> Generated Credentials</div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead class="table-light">
+                <tr><th>#</th><th>Username</th><th>Password</th><th>Initials</th></tr>
+            </thead>
+            <tbody>
+                <% results.forEach((r, i) => { %>
+                <tr>
+                    <td><%= i + 1 %></td>
+                    <td><code><%= r.username %></code></td>
+                    <td><code><%= r.password %></code></td>
+                    <td><code><%= r.initials %></code></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+<% } else if (success) { %>
+<div class="alert alert-success"><i class="bi bi-check-circle me-1"></i> <%= success %></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <h5 class="fw-semibold mb-3">CSV Format</h5>
+        <div class="alert alert-info">
+            <strong>Required column:</strong> <code>username</code><br>
+            <strong>Optional columns:</strong> <code>password</code> (auto-generated if empty), <code>initials</code> (auto-generated from name if empty), <code>role</code> (user/admin)
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <a href="/bulk/template/users" class="btn btn-sm btn-outline-success"><i class="bi bi-download me-1"></i> Download CSV Template</a>
+        </div>
+        <div class="bg-light rounded p-3 mb-4">
+            <small class="text-muted d-block mb-2">Example CSV (password auto-generated if omitted):</small>
+            <code style="font-size:12px">username,initials,role<br>john,JDU,user<br>jane,JDO,user</code>
+        </div>
+
+        <% if (error) { %>
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <%= error %></div>
+        <% } %>
+
+        <form method="POST" action="/bulk/users" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="mb-3">
+                <label class="form-label">Select CSV File <span class="text-danger">*</span></label>
+                <input type="file" name="file" class="form-control" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Import Users</button>
+        </form>
+    </div>
+</div>

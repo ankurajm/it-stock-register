@@ -1,0 +1,120 @@
+<% title = item ? 'Edit ' + item.asset_tag : 'Add Item' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-<%= item ? 'pencil' : 'plus' %>-circle me-2"></i> <%= item ? 'Edit' : 'Add' %> IT Item</h4>
+        <small class="text-muted"><%= item ? 'Update item details' : 'Register a new IT asset' %></small>
+    </div>
+    <a href="/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="POST" action="<%= item ? '/items/edit/' + item.id : '/items/add' %>" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3">
+                <% if (!item) { %>
+                <div class="col-md-4">
+                    <label class="form-label">Category <span class="text-danger">*</span></label>
+                    <select name="category_select" class="form-select" id="categorySelect" onchange="if(this.value) window.location='/items/add?category_id=' + this.value">
+                        <option value="">-- Select Category First --</option>
+                        <% categories.forEach(c => { %>
+                        <option value="<%= c.id %>" <%= selectedCategoryId == c.id ? 'selected' : '' %>><%= c.name %> (<%= c.prefix %>)</option>
+                        <% }); %>
+                    </select>
+                </div>
+                <% } %>
+
+                <div class="col-md-4">
+                    <label class="form-label">Asset Tag <span class="text-danger">*</span></label>
+                    <input type="text" name="asset_tag" class="form-control" value="<%= item ? item.asset_tag : nextTag %>" required <%= !item && !nextTag ? 'readonly placeholder="Select category first"' : '' %>>
+                    <div class="form-text">Alphanumeric, auto-generated from category</div>
+                </div>
+
+                <div class="col-md-4" <%= item ? '' : 'style="display:none"' %>>
+                    <label class="form-label">Category <span class="text-danger">*</span></label>
+                    <select name="category" class="form-select" <%= item ? 'required' : '' %>>
+                        <option value="">Select...</option>
+                        <% categories.forEach(c => { %>
+                        <option value="<%= c.name %>" <%= item && item.category === c.name ? 'selected' : '' %>><%= c.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Brand</label>
+                    <input type="text" name="brand" class="form-control" value="<%= item ? item.brand : '' %>" placeholder="e.g. Dell, HP">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Model</label>
+                    <input type="text" name="model" class="form-control" value="<%= item ? item.model : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Serial Number</label>
+                    <input type="text" name="serial_number" class="form-control" value="<%= item ? item.serial_number : '' %>">
+                    <div class="form-text">QR code will be auto-generated from serial number</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-control" value="<%= item ? item.location : '' %>" placeholder="Floor 3, Room 301">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Specifications</label>
+                    <textarea name="specifications" class="form-control" rows="2" placeholder="RAM, Storage, Processor, OS..."><%= item ? item.specifications : '' %></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Purchase Date</label>
+                    <input type="date" name="purchase_date" class="form-control" value="<%= item ? item.purchase_date : '' %>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Purchase Price (&#8377;)</label>
+                    <div class="input-group"><span class="input-group-text bg-white">&#8377;</span><input type="number" step="0.01" name="purchase_price" class="form-control" value="<%= item ? item.purchase_price : '' %>"></div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Vendor / Supplier</label>
+                    <input type="text" name="vendor" class="form-control" value="<%= item ? item.vendor : '' %>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Warranty End</label>
+                    <input type="date" name="warranty_end" class="form-control" value="<%= item ? item.warranty_end : '' %>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="available" <%= !item || item.status === 'available' ? 'selected' : '' %>>Available</option>
+                        <option value="allocated" <%= item && item.status === 'allocated' ? 'selected' : '' %>>Allocated</option>
+                        <option value="maintenance" <%= item && item.status === 'maintenance' ? 'selected' : '' %>>Maintenance</option>
+                        <option value="disposed" <%= item && item.status === 'disposed' ? 'selected' : '' %>>Disposed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Condition</label>
+                    <select name="condition" class="form-select">
+                        <option value="new" <%= !item || item.condition === 'new' ? 'selected' : '' %>>New</option>
+                        <option value="good" <%= item && item.condition === 'good' ? 'selected' : '' %>>Good</option>
+                        <option value="fair" <%= item && item.condition === 'fair' ? 'selected' : '' %>>Fair</option>
+                        <option value="poor" <%= item && item.condition === 'poor' ? 'selected' : '' %>>Poor</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Image</label>
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                    <% if (item && item.image) { %>
+                    <small class="text-muted">Current: <a href="/uploads/<%= item.image %>" target="_blank"><%= item.image %></a></small>
+                    <% } %>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control" rows="2"><%= item ? item.notes : '' %></textarea>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> <%= item ? 'Update' : 'Save' %> Item</button>
+                <a href="/items" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

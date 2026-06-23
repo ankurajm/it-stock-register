@@ -1,0 +1,39 @@
+<% title = 'Bulk Import Items' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-upload me-2"></i> Bulk Import Items</h4>
+        <small class="text-muted">Import multiple items from a CSV file</small>
+    </div>
+    <a href="/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-4">
+        <h5 class="fw-semibold mb-3">CSV Format</h5>
+        <div class="alert alert-info">
+            <strong>Required columns:</strong> <code>asset_tag</code>, <code>category</code><br>
+            <strong>Optional columns:</strong> <code>brand</code>, <code>model</code>, <code>serial_number</code>, <code>specifications</code>, <code>purchase_date</code>, <code>purchase_price</code>, <code>vendor</code>, <code>warranty_end</code>, <code>status</code>, <code>condition</code>, <code>location</code>, <code>notes</code>
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <a href="/bulk/template/items" class="btn btn-sm btn-outline-success"><i class="bi bi-download me-1"></i> Download CSV Template</a>
+        </div>
+        <div class="bg-light rounded p-3 mb-4">
+            <small class="text-muted d-block mb-2">Example CSV:</small>
+            <code style="font-size:12px">asset_tag,category,brand,model,serial_number,purchase_date,purchase_price,vendor,status<br>LAP-0001,Laptop,Dell,Latitude 3420,SN001234,2024-01-15,65000,Dell Inc.,available<br>LAP-0002,Laptop,Dell,Latitude 3420,SN001235,2024-01-15,65000,Dell Inc.,available</code>
+        </div>
+
+        <% if (error) { %>
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> <%= error %></div>
+        <% } %>
+
+        <form method="POST" action="/bulk/items" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="mb-3">
+                <label class="form-label">Select CSV File <span class="text-danger">*</span></label>
+                <input type="file" name="file" class="form-control" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Import Items</button>
+        </form>
+    </div>
+</div>

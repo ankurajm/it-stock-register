@@ -1,0 +1,152 @@
+<% title = item.asset_tag %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-laptop me-2"></i> <%= item.asset_tag %></h4>
+        <small class="text-muted"><%= item.category %> &middot; <%= item.brand || '' %> <%= item.model || '' %></small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/items/edit/<%= item.id %>" class="btn btn-warning"><i class="bi bi-pencil"></i> Edit</a>
+        <a href="/allocations/allocate" class="btn btn-outline-warning"><i class="bi bi-arrow-right"></i> Allocate</a>
+        <a href="/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="itemTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details"><i class="bi bi-info-circle me-1"></i>Details</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#allocations"><i class="bi bi-arrow-left-right me-1"></i>Allocations</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance"><i class="bi bi-tools me-1"></i>Maintenance</button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="details">
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-info-circle me-1"></i> Item Details</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Asset Tag</small><span class="fw-bold"><%= item.asset_tag %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Category</small><span class="badge bg-secondary"><%= item.category %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Brand</small><span><%= item.brand || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Model</small><span><%= item.model || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Serial Number</small><span><code><%= item.serial_number || '-' %></code></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Status</small>
+                                <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>
+                                <% } else if (item.status === 'allocated') { %><span class="badge bg-warning text-dark">Allocated</span>
+                                <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
+                                <% } else if (item.status === 'disposed') { %><span class="badge bg-dark">Disposed</span>
+                                <% } else { %><span class="badge bg-secondary"><%= item.status %></span><% } %>
+                            </div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Condition</small><span><%= item.condition || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Location</small><span><%= item.location || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Purchase Date</small><span><%= item.purchase_date || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Purchase Price</small><span>&#8377;<%= item.purchase_price || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Vendor</small><span><%= item.vendor || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Warranty End</small><span><%= item.warranty_end || '-' %></span></div>
+                            <div class="col-12"><small class="text-muted d-block">Specifications</small><p class="mb-0"><%= item.specifications || '-' %></p></div>
+                            <div class="col-12"><small class="text-muted d-block">Notes</small><p class="mb-0"><%= item.notes || '-' %></p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <% if (item.image) { %>
+                <div class="card mb-3">
+                    <div class="card-header"><i class="bi bi-image me-1"></i> Image</div>
+                    <div class="card-body text-center">
+                        <img src="/uploads/<%= item.image %>" class="img-fluid rounded" style="max-height: 220px;">
+                    </div>
+                </div>
+                <% } %>
+                <% if (allocation) { %>
+                <div class="card border-warning mb-3">
+                    <div class="card-header bg-warning bg-opacity-10"><i class="bi bi-person-check me-1"></i> Currently Allocated</div>
+                    <div class="card-body">
+                        <p class="mb-1 fw-bold"><%= allocation.emp_name %></p>
+                        <small class="text-muted"><%= allocation.emp_code %></small>
+                        <p class="mt-2 mb-0"><small>Since: <strong><%= allocation.allocated_date %></strong></small></p>
+                    </div>
+                </div>
+                <% } %>
+                <% if (item.qr_code) { %>
+                <div class="card mb-3">
+                    <div class="card-header"><i class="bi bi-qr-code me-1"></i> QR Code</div>
+                    <div class="card-body text-center">
+                        <img src="<%= item.qr_code %>" class="img-fluid" style="max-height: 140px; width: auto;" alt="QR Code for <%= item.asset_tag %>">
+                        <small class="text-muted d-block mt-1"><%= item.serial_number || item.asset_tag %></small>
+                    </div>
+                </div>
+                <% } %>
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-clock me-1"></i> Timestamps</div>
+                    <div class="card-body">
+                        <small class="text-muted d-block">Created: <%= item.created_at %></small>
+                        <small class="text-muted d-block">Updated: <%= item.updated_at || item.created_at %></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="allocations">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-arrow-left-right me-1"></i> Allocation History</span>
+                <a href="/allocations/allocate" class="btn btn-sm btn-warning"><i class="bi bi-plus"></i> Allocate</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th>Employee</th><th>Allocated</th><th>Returned</th><th>Remarks</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <% if (!allocationHistory || allocationHistory.length === 0) { %>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No allocation history</td></tr>
+                        <% } %>
+                        <% if (allocationHistory) { allocationHistory.forEach(a => { %>
+                        <tr>
+                            <td class="fw-medium"><%= a.emp_name || '-' %> (<%= a.emp_code || '-' %>)</td>
+                            <td><%= a.allocated_date %></td>
+                            <td><%= a.return_date || '-' %></td>
+                            <td><%= a.remarks || '-' %></td>
+                            <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
+                        </tr>
+                        <% }); } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="maintenance">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-tools me-1"></i> Maintenance History</span>
+                <a href="/maintenance/add" class="btn btn-sm btn-danger"><i class="bi bi-plus"></i> Log Issue</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th>Date</th><th>Issue</th><th>Vendor</th><th>Cost</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <% if (!maintenanceLogs || maintenanceLogs.length === 0) { %>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No maintenance records</td></tr>
+                        <% } %>
+                        <% if (maintenanceLogs) { maintenanceLogs.forEach(m => { %>
+                        <tr>
+                            <td><%= m.issue_date %></td>
+                            <td><%= m.issue_description || '-' %></td>
+                            <td><%= m.vendor || '-' %></td>
+                            <td>&#8377;<%= m.cost || '-' %></td>
+                            <td><span class="badge bg-<%= m.status === 'resolved' ? 'success' : m.status === 'in-progress' ? 'info' : 'danger' %>"><%= m.status %></span></td>
+                        </tr>
+                        <% }); } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

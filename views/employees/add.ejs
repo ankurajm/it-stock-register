@@ -1,0 +1,73 @@
+<% title = employee ? 'Edit ' + employee.name : 'Add Employee' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-<%= employee ? 'pencil' : 'plus' %>-circle me-2"></i> <%= employee ? 'Edit' : 'Add' %> Employee</h4>
+        <small class="text-muted"><%= employee ? 'Update employee details' : 'Register a new employee' %></small>
+    </div>
+    <a href="/employees" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<% if (!employee) { %>
+<div class="alert alert-info"><i class="bi bi-info-circle me-1"></i> A user account will be auto-created with initials and password when you save this employee.</div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="POST" action="<%= employee ? '/employees/edit/' + employee.id : '/employees/add' %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Employee ID <span class="text-danger">*</span></label>
+                    <input type="text" name="emp_id" class="form-control" value="<%= employee ? employee.emp_id : '' %>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="<%= employee ? employee.name : '' %>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Department</label>
+                    <input type="text" name="department" class="form-control" value="<%= employee ? employee.department : '' %>" placeholder="e.g. IT, HR, Finance">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Designation</label>
+                    <input type="text" name="designation" class="form-control" value="<%= employee ? employee.designation : '' %>" placeholder="e.g. Principal, Teacher, Headmaster">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Class Teacher (e.g. I-A, II-B)</label>
+                    <input type="text" name="class_teacher" class="form-control" value="<%= employee ? employee.class_teacher : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Subject Teacher (e.g. Physics, Math)</label>
+                    <input type="text" name="subject_teacher" class="form-control" value="<%= employee ? employee.subject_teacher : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="<%= employee ? employee.email : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control" value="<%= employee ? employee.phone : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Joining Date</label>
+                    <input type="date" name="joining_date" class="form-control" value="<%= employee ? employee.joining_date : '' %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="active" <%= !employee || employee.status === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="inactive" <%= employee && employee.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i> <%= employee ? 'Update' : 'Save' %> Employee</button>
+                <a href="/employees" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

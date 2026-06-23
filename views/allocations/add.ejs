@@ -1,0 +1,54 @@
+<% title = 'New Allocation' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i> New Allocation</h4>
+        <small class="text-muted">Assign an IT asset to an employee</small>
+    </div>
+    <a href="/allocations" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="POST" action="/allocations/allocate">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label">Select Item <span class="text-danger">*</span></label>
+                    <select name="item_id" class="form-select" required>
+                        <option value="">-- Select an available item --</option>
+                        <% items.forEach(item => { %>
+                        <option value="<%= item.id %>"><%= item.asset_tag %> — <%= item.category %><%= item.brand ? ' (' + item.brand + ')' : '' %></option>
+                        <% }); %>
+                    </select>
+                    <div class="form-text">Only items with <strong>Available</strong> status are shown.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Select Employee <span class="text-danger">*</span></label>
+                    <select name="employee_id" class="form-select" required>
+                        <option value="">-- Select an active employee --</option>
+                        <% employees.forEach(emp => { %>
+                        <option value="<%= emp.id %>"><%= emp.emp_id %> — <%= emp.name %><%= emp.department ? ' (' + emp.department + ')' : '' %></option>
+                        <% }); %>
+                    </select>
+                    <div class="form-text">Only <strong>Active</strong> employees are shown.</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Allocation Date <span class="text-danger">*</span></label>
+                    <input type="date" name="allocated_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Remarks / Purpose</label>
+                    <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for allocation, additional notes..."></textarea>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button type="submit" class="btn btn-warning"><i class="bi bi-check-lg me-1"></i> Allocate Item</button>
+                <a href="/allocations" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

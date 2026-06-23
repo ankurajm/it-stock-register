@@ -1,0 +1,100 @@
+<% title = 'Reports' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i> Reports &amp; Exports</h4>
+        <small class="text-muted">Generate PDF and Excel reports</small>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-primary border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-primary mb-3"><i class="bi bi-laptop"></i></div>
+                <h5 class="fw-bold">Items Report</h5>
+                <p class="text-muted small">Complete inventory listing with all fields.</p>
+                <form method="GET" action="/reports/items/pdf" class="row g-2 mb-2">
+                    <div class="col-6"><select name="category" class="form-select form-select-sm"><option value="">All Categories</option><% categories.forEach(c => { %><option value="<%= c.name || c.category %>"><%= c.name || c.category %></option><% }); %></select></div>
+                    <div class="col-6"><select name="status" class="form-select form-select-sm"><option value="">All Status</option><option value="available">Available</option><option value="allocated">Allocated</option><option value="maintenance">Maintenance</option></select></div>
+                    <div class="col-6"><button type="submit" class="btn btn-sm btn-danger w-100"><i class="bi bi-file-earmark-pdf"></i> PDF</button></div>
+                    <div class="col-6"><button type="submit" formaction="/reports/items/excel" class="btn btn-sm btn-success w-100"><i class="bi bi-file-earmark-excel"></i> Excel</button></div>
+                </form>
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                    <a href="/reports/items/pdf?status=allocated" class="btn btn-sm btn-outline-warning">Allocated</a>
+                    <a href="/reports/items/pdf?status=available" class="btn btn-sm btn-outline-success">Available</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-warning border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-warning mb-3"><i class="bi bi-arrow-left-right"></i></div>
+                <h5 class="fw-bold">Allocations Report</h5>
+                <p class="text-muted small">Active allocations with employee details.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="/reports/allocations/pdf" class="btn btn-sm btn-danger"><i class="bi bi-file-earmark-pdf"></i> PDF (Active)</a>
+                    <a href="/reports/allocations/excel" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Excel (All)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-danger border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-danger mb-3"><i class="bi bi-tools"></i></div>
+                <h5 class="fw-bold">Maintenance Report</h5>
+                <p class="text-muted small">All maintenance and repair records.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="/reports/maintenance/pdf" class="btn btn-sm btn-danger"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                    <a href="/reports/maintenance/excel" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-info border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-info mb-3"><i class="bi bi-shield-exclamation"></i></div>
+                <h5 class="fw-bold">Warranty Expiring</h5>
+                <p class="text-muted small">Items with warranty ending in 30 days.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="/reports/warranty/pdf" class="btn btn-sm btn-danger"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+                    <a href="/reports/warranty/excel" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-success border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-success mb-3"><i class="bi bi-download"></i></div>
+                <h5 class="fw-bold">Quick Exports</h5>
+                <p class="text-muted small">Direct Excel exports by status.</p>
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                    <a href="/reports/items/excel?status=available" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-excel"></i> Available</a>
+                    <a href="/reports/items/excel?status=allocated" class="btn btn-sm btn-outline-warning"><i class="bi bi-file-earmark-excel"></i> Allocated</a>
+                    <a href="/reports/items/excel?status=maintenance" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-excel"></i> Maintenance</a>
+                    <a href="/reports/warranty/excel" class="btn btn-sm btn-outline-info"><i class="bi bi-file-earmark-excel"></i> Warranty</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-top border-danger border-3">
+            <div class="card-body text-center py-4">
+                <div class="fs-1 text-danger mb-3"><i class="bi bi-shield-check"></i></div>
+                <h5 class="fw-bold">No Dues Certificate</h5>
+                <p class="text-muted small">Generate no-dues certificate for an employee after clearing all IT assets.</p>
+                <a href="/reports/no-dues" class="btn btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> Generate Certificate</a>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>

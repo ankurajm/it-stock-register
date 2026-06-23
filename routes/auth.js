@@ -1,0 +1,113 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const router = express.Router();
+const { get, run } = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
+
+router.get('/login', (req, res) => {
+    if (req.session.user) return res.redirect('/');
+    res.render('login', { layout: false, error: req.flash('error')[0] || null });
+});
+
+router.post('/login', require('express-rate-limit')({
+    windowMs: 60 * 1000,
+    max: 10,
+    message: 'Too many login attempts. Please try again after a minute.',
+    handler: (req, res) => {
+        req.flash('error', 'Too many login attempts. Please try again after a minute.');
+        res.redirect('/login');
+    }
+}), async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+            req.flash('error', 'Invalid username or password');
+            return res.redirect('/login');
+        }
+        req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+        req.flash('success', 'Welcome back, ' + user.username + '!');
+        res.redirect('/');
+    } catch (err) {
+        console.error('Login error:', err.message);
+        req.flash('error', 'Login failed. Please try again.');
+        res.redirect('/login');
+    }
+});
+
+router.get('/login/admin', (req, res) => {
+    if (req.session.user) return res.redirect('/');
+    res.render('login-admin', { layout: false, error: req.flash('error')[0] || null });
+});
+
+router.post('/login/admin', require('express-rate-limit')({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: 'Too many admin login attempts. Please try again after a minute.',
+    handler: (req, res) => {
+        req.flash('error', 'Too many admin login attempts. Please try again after a minute.');
+        res.redirect('/login/admin');
+    }
+}), async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
+        if (!user || user.role !== 'admin') {
+            req.flash('error', 'Admin access denied. Invalid credentials.');
+            return res.redirect('/login/admin');
+        }
+        if (!bcrypt.compareSync(password, user.password)) {
+            req.flash('error', 'Admin access denied. Invalid credentials.');
+            return res.redirect('/login/admin');
+        }
+        req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+        req.flash('success', 'Welcome back, ' + user.username + '!');
+        res.redirect('/');
+    } catch (err) {
+        console.error('Admin login error:', err.message);
+        req.flash('error', 'Login failed. Please try again.');
+        res.redirect('/login/admin');
+    }
+});
+
+router.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login');
+    });
+});
+
+router.get('/change-password', requireAuth, (req, res) => {
+    res.render('change-password', { layout: false, error: null });
+});
+
+router.post('/change-password', requireAuth, require('express-rate-limit')({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: 'Too many attempts. Please try again after a minute.',
+    handler: (req, res) => {
+        return res.render('change-password', { layout: false, error: 'Too many attempts. Please try again after a minute.' });
+    }
+}), async (req, res) => {
+    try {
+        const { current_password, new_password, confirm_password } = req.body;
+        const user = await get(`SELECT * FROM users WHERE id = ?`, [req.session.user.id]);
+        if (!user || !bcrypt.compareSync(current_password, user.password)) {
+            return res.render('change-password', { layout: false, error: 'Current password is incorrect' });
+        }
+        if (new_password.length < 4) {
+            return res.render('change-password', { layout: false, error: 'New password must be at least 4 characters' });
+        }
+        if (new_password !== confirm_password) {
+            return res.render('change-password', { layout: false, error: 'Passwords do not match' });
+        }
+        const hashed = bcrypt.hashSync(new_password, 8);
+        await run(`UPDATE users SET password=? WHERE id=?`, [hashed, req.session.user.id]);
+        req.flash('success', 'Password changed successfully');
+        res.redirect('/');
+    } catch (err) {
+        console.error('Change password error:', err.message);
+        res.render('change-password', { layout: false, error: 'Failed to change password' });
+    }
+});
+
+module.exports = router;

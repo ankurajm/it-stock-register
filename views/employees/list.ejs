@@ -1,0 +1,106 @@
+<% title = 'Employees' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-people me-2"></i> Employees</h4>
+        <small class="text-muted"><%= typeof totalItems !== 'undefined' ? totalItems : employees.length %> employee(s)</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/bulk/employees" class="btn btn-outline-info"><i class="bi bi-upload"></i> Bulk Import</a>
+        <div class="dropdown">
+            <button class="btn btn-outline-danger dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-download me-1"></i> Credentials</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/employees/export/credentials/pdf" target="_blank"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Export PDF</a></li>
+                <li><a class="dropdown-item" href="/employees/export/credentials/excel" target="_blank"><i class="bi bi-file-earmark-excel me-2 text-success"></i> Export Excel</a></li>
+            </ul>
+        </div>
+        <a href="/employees/add" class="btn btn-success"><i class="bi bi-plus-lg"></i> Add Employee</a>
+    </div>
+</div>
+
+<div class="alert alert-warning alert-dismissible fade show py-2 small mb-3"><i class="bi bi-exclamation-triangle me-1"></i> Exporting credentials will generate new passwords for all employees with user accounts. Previous passwords will stop working.</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-2">
+            <div class="col-md-5">
+                <div class="input-group"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search name, ID, department..." value="<%= search || '' %>">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="department" class="form-select">
+                    <option value="">All Departments</option>
+                    <% if (typeof departments !== 'undefined') { departments.forEach(d => { %>
+                    <option value="<%= d.department %>" <%= department === d.department ? 'selected' : '' %>><%= d.department %></option>
+                    <% }); } %>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="active" <%= status === 'active' ? 'selected' : '' %>>Active</option>
+                    <option value="inactive" <%= status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Emp ID</th><th>Name</th><th>Department</th><th class="d-none d-md-table-cell">Designation</th><th class="d-none d-lg-table-cell">Email</th><th>Status</th><th>Items</th><th class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+                <% if (employees.length === 0) { %>
+                <tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i> No employees found</td></tr>
+                <% } %>
+                <% employees.forEach(emp => { %>
+                <tr>
+                    <td class="fw-medium"><%= emp.emp_id %></td>
+                    <td><%= emp.name %></td>
+                    <td><%= emp.department || '-' %></td>
+                    <td class="d-none d-md-table-cell"><%= emp.designation || '-' %></td>
+                    <td class="d-none d-lg-table-cell"><%= emp.email || '-' %></td>
+                    <td><span class="badge bg-<%= emp.status === 'active' ? 'success' : 'secondary' %>"><%= emp.status %></span></td>
+                    <td><span class="badge bg-info"><%= emp.allocated_items || 0 %></span></td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="/employees/view/<%= emp.id %>" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
+                            <a href="/employees/edit/<%= emp.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="/employees/delete/<%= emp.id %>" style="display:inline" onsubmit="return confirm('Delete <%= emp.name %>? Their allocations will be closed.')">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+        <small class="text-muted">Page <%= currentPage %> of <%= totalPages %> (<%= totalItems %> employees)</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= currentPage - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= department ? '&department=' + encodeURIComponent(department) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %>">Previous</a>
+                </li>
+                <% for (let p = Math.max(1, currentPage - 2); p <= Math.min(totalPages, currentPage + 2); p++) { %>
+                <li class="page-item <%= p === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= department ? '&department=' + encodeURIComponent(department) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %>"><%= p %></a>
+                </li>
+                <% } %>
+                <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= department ? '&department=' + encodeURIComponent(department) : '' %><%= status ? '&status=' + encodeURIComponent(status) : '' %>">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <% } %>
+</div>

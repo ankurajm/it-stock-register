@@ -1,0 +1,39 @@
+<% title = category ? 'Edit ' + category.name : 'Add Category' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-<%= category ? 'pencil' : 'plus' %>-circle me-2"></i> <%= category ? 'Edit' : 'Add' %> Category</h4>
+        <small class="text-muted"><%= category ? 'Update category details' : 'Create a new item category' %></small>
+    </div>
+    <a href="/categories" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="POST" action="<%= category ? '/categories/edit/' + category.id : '/categories/add' %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Category Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="<%= category ? category.name : '' %>" required placeholder="e.g. Laptop, Desktop">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Prefix <span class="text-danger">*</span></label>
+                    <input type="text" name="prefix" class="form-control" value="<%= category ? category.prefix : '' %>" required placeholder="e.g. LAP" maxlength="5" style="text-transform:uppercase">
+                    <div class="form-text">Used for auto-generating asset tags (e.g. LAP-0001)</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="2"><%= category ? category.description : '' %></textarea>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> <%= category ? 'Update' : 'Save' %> Category</button>
+                <a href="/categories" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

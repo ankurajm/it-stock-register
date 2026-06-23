@@ -1,0 +1,70 @@
+/**
+ * Password Reset Script
+ * Run from terminal: node reset-password.js <username> <new-password>
+ * Example: node reset-password.js admin myNewPass123
+ */
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const path = require('path');
+const config = require('./config/app');
+
+// Manually init DB without starting the full server
+const Database = require('better-sqlite3');
+const dbPath = path.resolve(config.dbPath);
+let db;
+try {
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+} catch (err) {
+    console.error('Failed to open database:', err.message);
+    process.exit(1);
+}
+
+const username = process.argv[2];
+const newPassword = process.argv[3];
+
+if (!username || !newPassword) {
+    console.log('');
+    console.log('  IT Stock Register — Password Reset Tool');
+    console.log('  ========================================');
+    console.log('');
+    console.log('  Usage:   node reset-password.js <username> <new-password>');
+    console.log('  Example: node reset-password.js admin MyNewPass123');
+    console.log('  Example: node reset-password.js user user123');
+    console.log('');
+    console.log('  This script resets any user\'s password without needing to log in.');
+    console.log('');
+    process.exit(1);
+}
+
+if (newPassword.length < 4) {
+    console.error('Password must be at least 4 characters.');
+    process.exit(1);
+}
+
+try {
+    const user = db.prepare('SELECT id, username, role FROM users WHERE username = ?').get(username);
+    if (!user) {
+        console.error(`User "${username}" not found.`);
+        console.log('Available users:');
+        const users = db.prepare('SELECT username, role FROM users ORDER BY username').all();
+        users.forEach(u => console.log(`  - ${u.username} (${u.role})`));
+        process.exit(1);
+    }
+
+    const hashed = bcrypt.hashSync(newPassword, 8);
+    db.prepare('UPDATE users SET password = ?, password_change_requested = 0 WHERE id = ?').run(hashed, user.id);
+
+    console.log('');
+    console.log(`  Password reset successful!`);
+    console.log(`  Username: ${user.username}`);
+    console.log(`  Role:     ${user.role}`);
+    console.log(`  New password set. You can now log in.`);
+    console.log(`  URL:      http://localhost:4050`);
+    console.log('');
+} catch (err) {
+    console.error('Reset failed:', err.message);
+    process.exit(1);
+} finally {
+    db.close();
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Login - IT Stock Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-wrapper { width: 100%; max-width: 420px; }
+        .login-card { background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-radius: 24px; box-shadow: 0 25px 80px rgba(0,0,0,0.35); overflow: hidden; }
+        .login-brand { background: linear-gradient(135deg, #667eea, #764ba2); padding: 40px 30px 30px; text-align: center; color: white; }
+        .login-brand .brand-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 14px; }
+        .login-brand h2 { font-weight: 800; font-size: 22px; margin: 0; }
+        .login-brand p { opacity: 0.7; margin: 4px 0 0; font-size: 13px; }
+        .login-form { padding: 30px; }
+        .login-form .form-control { border-radius: 12px; padding: 12px 16px; border: 2px solid #e2e8f0; font-size: 14px; transition: all 0.3s; }
+        .login-form .form-control:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); }
+        .login-form .form-label { font-weight: 600; color: #4a5568; font-size: 13px; margin-bottom: 6px; }
+        .btn-login { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; padding: 13px; font-weight: 600; font-size: 15px; width: 100%; transition: all 0.3s; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.35); color: white; }
+        .login-hint { text-align: center; padding: 0 30px 24px; color: #8898aa; font-size: 12px; }
+        .login-hint code { background: #f0f2f5; padding: 3px 8px; border-radius: 4px; font-size: 12px; color: #4a5568; }
+        .alert { border-radius: 12px; font-size: 13px; padding: 10px 14px; }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="brand-icon"><i class="bi bi-box-seam"></i></div>
+                <h2>IT Stock Register</h2>
+                <p>Complete Asset Management System</p>
+            </div>
+            <div class="login-form">
+                <% if (error) { %>
+                <div class="alert alert-danger d-flex align-items-center"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %></div>
+                <% } %>
+                <form method="POST" action="/login">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person me-1"></i> Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="Enter your username" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-lock me-1"></i> Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn-login"><i class="bi bi-box-arrow-in-right me-2"></i> Sign In</button>
+                </form>
+            </div>
+            <div class="login-hint">
+                Contact your administrator for access
+            </div>
+        </div>
+    </div>
+</body>
+</html>

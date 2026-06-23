@@ -1,0 +1,12 @@
+node_modules/
+.env
+database.db
+database.db-shm
+database.db-wal
+server.err
+favicon_io.zip
+uploads/*
+!uploads/.gitkeep
+backups/
+*.log
+.DS_Store
