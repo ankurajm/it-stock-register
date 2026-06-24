@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { run, get, all } = require('../config/db');
+const { run, get, all, transaction } = require('../config/db');
 
 router.get('/', requireAuth, requireAdmin, async (req, res) => {
     try {
@@ -55,8 +55,10 @@ router.post('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
             req.flash('error', 'Category not found');
             return res.redirect('/categories');
         }
-        await run(`UPDATE categories SET name=?, prefix=?, description=? WHERE id=?`, [name, prefix.toUpperCase(), description, req.params.id]);
-        await run(`UPDATE items SET category=? WHERE category=?`, [name, oldCat.name]);
+        await transaction(async (trx) => {
+            await trx.run(`UPDATE categories SET name=?, prefix=?, description=? WHERE id=?`, [name, prefix.toUpperCase(), description, req.params.id]);
+            await trx.run(`UPDATE items SET category=? WHERE category=?`, [name, oldCat.name]);
+        });
         req.flash('success', 'Category updated successfully');
         res.redirect('/categories');
     } catch (err) {

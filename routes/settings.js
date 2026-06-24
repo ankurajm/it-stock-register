@@ -8,7 +8,7 @@ const { validateCsrf } = require('../middleware/csrf');
 const { run, get } = require('../config/db');
 
 const upload = multer({
-    dest: config.uploadDir,
+    dest: path.join(__dirname, '..', 'uploads', 'temp'),
     limits: { fileSize: 2 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

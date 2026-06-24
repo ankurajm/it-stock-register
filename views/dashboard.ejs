@@ -196,7 +196,7 @@
                 <tbody>
                     <% expiringWarranty.forEach(item => { 
                         const now = new Date();
-                        const end = new Date(item.warranty_end);
+                        const end = item.warranty_end ? new Date(item.warranty_end) : new Date();
                         const daysLeft = Math.ceil((end - now) / (1000*60*60*24));
                     %>
                     <tr>
@@ -233,7 +233,7 @@
     new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
         data: {
-            labels: [<% categoryStats.forEach((c,i) => { %>'<%= c.category %>'<%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
+            labels: [<% categoryStats.forEach((c,i) => { %><%- JSON.stringify(c.category) %><%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
             datasets: [{
                 data: [<% categoryStats.forEach((c,i) => { %><%= c.count %><%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
                 backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1','#0dcaf0','#20c997','#fd7e14','#d63384'],

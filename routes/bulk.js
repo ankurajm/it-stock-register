@@ -184,15 +184,13 @@ router.get('/template/users', requireAuth, requireAdmin, (req, res) => {
     res.send(headers.join(',') + '\n' + example.join(',') + '\n');
 });
 
-let employeeCounter = 1;
 async function nextEmpId(trx) {
     const last = await trx.get(`SELECT emp_id FROM employees ORDER BY id DESC LIMIT 1`);
+    let num = 0;
     if (last) {
-        const num = parseInt(last.emp_id.replace(/[^0-9]/g, '')) || 0;
-        employeeCounter = num + 1;
+        num = parseInt(last.emp_id.replace(/[^0-9]/g, '')) || 0;
     }
-    const id = employeeCounter++;
-    return 'EMP' + String(id).padStart(4, '0');
+    return 'EMP' + String(num + 1).padStart(4, '0');
 }
 
 router.get('/employees', requireAuth, requireAdmin, (req, res) => {

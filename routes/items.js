@@ -102,7 +102,9 @@ router.get('/add', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/add', requireAuth, upload.single('image'), validateCsrf, async (req, res) => {
+const mutationLimiter = require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests. Please slow down.'); res.redirect(req.originalUrl || '/'); } });
+
+router.post('/add', requireAuth, mutationLimiter, upload.single('image'), validateCsrf, async (req, res) => {
     try {
         const { asset_tag, category, category_select, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes } = req.body;
         const image = req.file ? req.file.filename : null;
@@ -169,7 +171,7 @@ router.get('/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/edit/:id', requireAuth, upload.single('image'), validateCsrf, async (req, res) => {
+router.post('/edit/:id', requireAuth, mutationLimiter, upload.single('image'), validateCsrf, async (req, res) => {
     try {
         const { asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes } = req.body;
 
@@ -227,7 +229,7 @@ router.get('/bulk-clone', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/bulk-clone', requireAuth, async (req, res) => {
+router.post('/bulk-clone', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { category, brand, model, specifications, purchase_date, purchase_price, vendor, warranty_end, condition, location, notes, serial_numbers } = req.body;
 

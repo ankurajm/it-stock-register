@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { run, get, all } = require('../config/db');
 
 router.get('/', requireAuth, async (req, res) => {
@@ -40,7 +40,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/allocate', requireAuth, async (req, res) => {
+router.get('/allocate', requireAuth, requireAdmin, async (req, res) => {
     try {
         const items = await all(`SELECT * FROM items WHERE status='available' ORDER BY asset_tag`);
         const employees = await all(`SELECT * FROM employees WHERE status='active' ORDER BY name`);
@@ -52,7 +52,7 @@ router.get('/allocate', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/allocate', requireAuth, async (req, res) => {
+router.post('/allocate', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { item_id, employee_id, allocated_date, remarks } = req.body;
 
@@ -99,7 +99,7 @@ router.get('/employee/:id/history', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/return/:id', requireAuth, async (req, res) => {
+router.post('/return/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { return_date, remarks } = req.body;
         const allocation = await get(`SELECT * FROM allocations WHERE id = ? AND status='active'`, [req.params.id]);

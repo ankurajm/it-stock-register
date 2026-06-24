@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const router = express.Router();
 const { get, run } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
@@ -26,6 +27,7 @@ router.post('/login', require('express-rate-limit')({
             return res.redirect('/login');
         }
         req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
         req.flash('success', 'Welcome back, ' + user.username + '!');
         res.redirect('/');
     } catch (err) {
@@ -61,6 +63,7 @@ router.post('/login/admin', require('express-rate-limit')({
             return res.redirect('/login/admin');
         }
         req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
         req.flash('success', 'Welcome back, ' + user.username + '!');
         res.redirect('/');
     } catch (err) {
@@ -71,7 +74,9 @@ router.post('/login/admin', require('express-rate-limit')({
 });
 
 router.get('/logout', (req, res) => {
+    const sessionCookie = req.session.cookie;
     req.session.destroy(() => {
+        res.clearCookie('connect.sid');
         res.redirect('/login');
     });
 });

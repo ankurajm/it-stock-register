@@ -1,22 +1,18 @@
-const fs = require('fs');
 const fsp = require('fs').promises;
 const path = require('path');
 const config = require('../config/app');
-const { getDB } = require('../config/db');
 
 async function performBackup() {
     await fsp.mkdir(config.backupDir, { recursive: true });
 
-    const sourceDb = config.dbPath;
     const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const backupPath = path.join(config.backupDir, `backup-${date}.db`);
+    const file = path.join(config.backupDir, `backup-${date}.sql`);
 
     try {
-        const db = getDB();
-        db.pragma('wal_checkpoint(TRUNCATE)');
-        await fsp.copyFile(sourceDb, backupPath);
-        console.log(`Backup created: ${backupPath}`);
-        return backupPath;
+        const { execSync } = require('child_process');
+        execSync(`pg_dump "${process.env.DATABASE_URL}" > "${file}"`, { stdio: 'ignore' });
+        console.log(`Backup created: ${file}`);
+        return file;
     } catch (err) {
         console.error(`Backup failed: ${err.message}`);
         throw err;
@@ -64,13 +60,13 @@ async function getBackupInfo() {
 
     const result = [];
     for (const f of files) {
-        if (!f.endsWith('.db')) continue;
+        if (!f.endsWith('.sql')) continue;
         const filePath = path.join(config.backupDir, f);
         try {
             const stats = await fsp.stat(filePath);
             result.push({
                 name: f,
-                size: (stats.size / 1024 / 1024).toFixed(2) + ' MB',
+                size: (stats.size / 1024).toFixed(1) + ' KB',
                 date: stats.mtime
             });
         } catch { /* skip */ }

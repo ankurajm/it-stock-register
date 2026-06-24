@@ -53,7 +53,7 @@ router.get('/add', requireAuth, (req, res) => {
     res.render('employees/add', { error: null, employee: null });
 });
 
-router.post('/add', requireAuth, async (req, res) => {
+router.post('/add', requireAuth, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -112,7 +112,7 @@ router.get('/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/edit/:id', requireAuth, async (req, res) => {
+router.post('/edit/:id', requireAuth, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         await run(`UPDATE employees SET emp_id=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
@@ -122,8 +122,11 @@ router.post('/edit/:id', requireAuth, async (req, res) => {
         if (user) {
             const roleInitial = getRoleInitial(designation, 'user');
             if (roleInitial) {
-                await run(`UPDATE users SET initials = '' WHERE initials = ? AND username != ?`, [roleInitial, emp_id]);
-                await run(`UPDATE users SET initials = ? WHERE username = ?`, [roleInitial, emp_id]);
+                const current = await get(`SELECT initials FROM users WHERE username = ?`, [emp_id]);
+                if (current && current.initials !== roleInitial) {
+                    await run(`UPDATE users SET initials = '' WHERE initials = ? AND username != ?`, [roleInitial, emp_id]);
+                    await run(`UPDATE users SET initials = ? WHERE username = ?`, [roleInitial, emp_id]);
+                }
             }
         }
 
@@ -176,13 +179,13 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
         doc.fillColor('#000');
         doc.moveDown();
 
-        const colX = [30, 130, 240, 330, 420, 500];
-        const headers = ['Emp ID', 'Name', 'Department', 'Username', 'Password', 'Initials'];
+        const colX = [30, 140, 250, 340, 420];
+        const headers = ['Emp ID', 'Name', 'Department', 'Username', 'Initials'];
         const pageWidth = doc.page.width - 60;
 
         doc.rect(30, doc.y, pageWidth, 18).fill('#4472C4');
         doc.fill('#FFFFFF').fontSize(8).font('Helvetica-Bold');
-        headers.forEach((h, i) => doc.text(h, colX[i] + 4, doc.y - 14, { width: colX[i + 1] - colX[i] - 8 || 80 }));
+        headers.forEach((h, i) => doc.text(h, colX[i] + 4, doc.y - 14, { width: (colX[i + 1] || doc.page.width - 30) - colX[i] - 8 }));
         doc.fillColor('#000');
 
         let y = doc.y + 4;
@@ -192,32 +195,19 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
                 y = 30;
                 doc.rect(30, y, pageWidth, 18).fill('#4472C4');
                 doc.fill('#FFFFFF').fontSize(8).font('Helvetica-Bold');
-                headers.forEach((h, i) => doc.text(h, colX[i] + 4, y + 2, { width: colX[i + 1] - colX[i] - 8 || 80 }));
+                headers.forEach((h, i) => doc.text(h, colX[i] + 4, y + 2, { width: (colX[i + 1] || doc.page.width - 30) - colX[i] - 8 }));
                 doc.fillColor('#000');
                 y += 22;
             }
             if (idx % 2 === 0) {
                 doc.rect(30, y - 2, pageWidth, 16).fillOpacity(0.05).fill('#f0f0f0').fillOpacity(1);
             }
-            if (row.username) {
-                const password = generatePassword();
-                const hashed = bcrypt.hashSync(password, 8);
-                await run(`UPDATE users SET password = ? WHERE username = ?`, [hashed, row.username]);
-                doc.fontSize(7).font('Helvetica');
-                doc.text(row.emp_id || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
-                doc.text(row.name || '-', colX[1] + 4, y, { width: colX[2] - colX[1] - 8 });
-                doc.text(row.department || '-', colX[2] + 4, y, { width: colX[3] - colX[2] - 8 });
-                doc.text(row.username, colX[3] + 4, y, { width: colX[4] - colX[3] - 8 });
-                doc.text(password, colX[4] + 4, y, { width: colX[5] - colX[4] - 8 });
-                doc.text(row.initials || '-', colX[5] + 4, y, { width: 80 });
-            } else {
-                doc.fontSize(7).font('Helvetica').fillColor('#999');
-                doc.text(row.emp_id || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
-                doc.text(row.name || '-', colX[1] + 4, y, { width: colX[2] - colX[1] - 8 });
-                doc.text(row.department || '-', colX[2] + 4, y, { width: colX[3] - colX[2] - 8 });
-                doc.text('No account', colX[3] + 4, y, { width: colX[5] - colX[3] - 8 + 80 });
-                doc.fillColor('#000');
-            }
+            doc.fontSize(7).font('Helvetica');
+            doc.text(row.emp_id || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
+            doc.text(row.name || '-', colX[1] + 4, y, { width: colX[2] - colX[1] - 8 });
+            doc.text(row.department || '-', colX[2] + 4, y, { width: colX[3] - colX[2] - 8 });
+            doc.text(row.username || 'No account', colX[3] + 4, y, { width: colX[4] - colX[3] - 8 });
+            doc.text(row.initials || '-', colX[4] + 4, y, { width: 80 });
             y += 16;
         }
 
@@ -243,27 +233,18 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
             { header: 'Department', key: 'department', width: 20 },
             { header: 'Designation', key: 'designation', width: 20 },
             { header: 'Username', key: 'username', width: 15 },
-            { header: 'Password', key: 'password', width: 15 },
             { header: 'Initials', key: 'initials', width: 10 }
         ];
 
         for (const row of rows) {
-            const data = {
+            sheet.addRow({
                 emp_id: row.emp_id,
                 name: row.name,
                 department: row.department || '-',
                 designation: row.designation || '-',
                 username: row.username || '-',
-                password: '-',
                 initials: row.initials || '-'
-            };
-            if (row.username) {
-                const password = generatePassword();
-                const hashed = bcrypt.hashSync(password, 8);
-                await run(`UPDATE users SET password = ? WHERE username = ?`, [hashed, row.username]);
-                data.password = password;
-            }
-            sheet.addRow(data);
+            });
         }
 
         const headerRow = sheet.getRow(1);

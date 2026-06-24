@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { run, get, all } = require('../config/db');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { status } = req.query;
         const page = parseInt(req.query.page) || 1;
@@ -35,7 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/add', requireAuth, async (req, res) => {
+router.get('/add', requireAuth, requireAdmin, async (req, res) => {
     try {
         const items = await all(`SELECT * FROM items WHERE status NOT IN ('disposed') ORDER BY asset_tag`);
         res.render('maintenance/add', { error: null, record: null, items });
@@ -46,7 +46,7 @@ router.get('/add', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/add', requireAuth, async (req, res) => {
+router.post('/add', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { item_id, issue_date, issue_description, vendor, cost, status, remarks } = req.body;
 
@@ -69,7 +69,7 @@ router.post('/add', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/edit/:id', requireAuth, async (req, res) => {
+router.get('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const record = await get(`SELECT * FROM maintenance WHERE id = ?`, [req.params.id]);
         if (!record) {
@@ -85,7 +85,7 @@ router.get('/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/edit/:id', requireAuth, async (req, res) => {
+router.post('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { item_id, issue_date, issue_description, vendor, cost, status, resolution_date, remarks } = req.body;
 
@@ -114,7 +114,7 @@ router.post('/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const record = await get(`SELECT m.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, i.location FROM maintenance m LEFT JOIN items i ON m.item_id = i.id WHERE m.id = ?`, [req.params.id]);
         if (!record) {
@@ -129,7 +129,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/:id/resolve', requireAuth, async (req, res) => {
+router.post('/:id/resolve', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { resolution_date, cost, remarks } = req.body;
         const record = await get(`SELECT * FROM maintenance WHERE id = ?`, [req.params.id]);

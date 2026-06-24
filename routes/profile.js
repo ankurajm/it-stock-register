@@ -16,9 +16,17 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, require('express-rate-limit')({ windowMs: 60 * 1000, max: 10, handler: (req, res) => { req.flash('error', 'Too many requests. Please slow down.'); res.redirect('/profile'); } }), async (req, res) => {
     try {
         const { name, email, phone } = req.body;
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            req.flash('error', 'Invalid email format');
+            return res.redirect('/profile');
+        }
+        if (phone && !/^[+]?[\d\s()-]{7,20}$/.test(phone)) {
+            req.flash('error', 'Invalid phone number');
+            return res.redirect('/profile');
+        }
         const employee = await get(`SELECT * FROM employees WHERE emp_id = ?`, [req.session.user.username]);
 
         if (employee) {
