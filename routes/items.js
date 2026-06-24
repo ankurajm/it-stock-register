@@ -112,7 +112,13 @@ router.post('/add', requireAuth, mutationLimiter, upload.single('image'), valida
         const image = req.file ? req.file.filename : null;
 
         let resolvedCategory = category;
-        if (!resolvedCategory && category_select) {
+        if (category_select === 'other') {
+            if (!category || !category.trim()) {
+                const categories = await all(`SELECT * FROM categories ORDER BY name`);
+                return res.render('items/add', { error: 'Enter a category name when selecting "Other"', item: null, categories, nextTag: '', selectedCategoryId: '' });
+            }
+            resolvedCategory = category.trim();
+        } else if (!resolvedCategory && category_select) {
             const cat = await get(`SELECT name FROM categories WHERE id = ?`, [category_select]);
             if (cat) resolvedCategory = cat.name;
         }

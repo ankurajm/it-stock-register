@@ -24,6 +24,7 @@
                         <% categories.forEach(c => { %>
                         <option value="<%= c.id %>"><%= c.name %> (<%= c.prefix %>)</option>
                         <% }); %>
+                        <option value="other">Other (no prefix)</option>
                     </select>
                 </div>
                 <% } %>
@@ -34,14 +35,9 @@
                     <div class="form-text">Alphanumeric, auto-generated from category</div>
                 </div>
 
-                <div class="col-md-4" <%= item ? '' : 'style="display:none"' %>>
-                    <label class="form-label">Category <span class="text-danger">*</span></label>
-                    <select name="category" class="form-select" <%= item ? 'required' : '' %>>
-                        <option value="">Select...</option>
-                        <% categories.forEach(c => { %>
-                        <option value="<%= c.name %>" <%= item && item.category === c.name ? 'selected' : '' %>><%= c.name %></option>
-                        <% }); %>
-                    </select>
+                <div class="col-md-4">
+                    <label class="form-label">Category Name <span class="text-danger">*</span></label>
+                    <input type="text" name="category" id="categoryName" class="form-control" value="<%= item ? item.category : '' %>" <%= item ? 'readonly' : 'readonly placeholder="Select category or choose Other to type"' %>>
                 </div>
 
                 <div class="col-md-4">
@@ -122,14 +118,33 @@
 <% if (!item) { %>
 <script>
 document.getElementById('categorySelect').addEventListener('change', function() {
-    const catId = this.value;
+    const val = this.value;
+    const catName = document.getElementById('categoryName');
     const tagInput = document.getElementById('assetTagInput');
-    if (!catId) { tagInput.value = ''; tagInput.placeholder = 'Select category to auto-generate'; return; }
-    tagInput.placeholder = 'Generating...';
-    fetch('/items/next-tag/' + catId)
-        .then(r => r.json())
-        .then(data => { tagInput.value = data.tag; tagInput.placeholder = 'Auto-generated'; })
-        .catch(() => { tagInput.placeholder = 'Select category first'; });
+    if (val === 'other') {
+        catName.readOnly = false;
+        catName.value = '';
+        catName.placeholder = 'Enter custom category name';
+        tagInput.value = '';
+        tagInput.placeholder = 'Custom category has no prefix - type tag manually';
+        setTimeout(() => catName.focus(), 100);
+    } else if (val) {
+        const text = this.options[this.selectedIndex].textContent;
+        const name = text.includes(' (') ? text.split(' (')[0] : text;
+        catName.readOnly = true;
+        catName.value = name;
+        tagInput.placeholder = 'Generating...';
+        fetch('/items/next-tag/' + val)
+            .then(r => r.json())
+            .then(data => { tagInput.value = data.tag; tagInput.placeholder = 'Auto-generated'; })
+            .catch(() => { tagInput.placeholder = 'Select category first'; });
+    } else {
+        catName.readOnly = true;
+        catName.value = '';
+        catName.placeholder = 'Select category or choose Other to type';
+        tagInput.value = '';
+        tagInput.placeholder = 'Select category to auto-generate';
+    }
 });
 </script>
 <% } %>
