@@ -35,6 +35,10 @@ async function getAcademicSession() {
     return `Session: ${year - 1}-${year.toString().slice(-2)}`;
 }
 
+function safeFont(doc, name, fallback) {
+    try { return doc.font(name); } catch (e) { return doc.font(fallback || 'Helvetica'); }
+}
+
 async function addReportHeader(doc, title) {
     const info = await getSchoolInfo();
     registerFonts(doc);
@@ -57,10 +61,10 @@ async function addReportHeader(doc, title) {
     const subFont = 'Pristina';
 
     doc.y = textStartY;
-    doc.fontSize(24).font(nameFont).text(info.school_name, { align: 'center' });
+    doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
     if (info.sub_heading) {
         doc.moveDown(0.15);
-        doc.fontSize(12).font(subFont).fillColor('#555').text(info.sub_heading, { align: 'center' });
+        doc.fontSize(12); safeFont(doc, subFont, 'Helvetica').fillColor('#555').text(info.sub_heading, { align: 'center' });
         doc.fillColor('#000');
     }
     doc.moveDown(0.15);
@@ -322,10 +326,10 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
 
         const session = await getAcademicSession();
         doc.y = textStartY;
-        doc.fontSize(24).font(nameFont).text(info.school_name, { align: 'center' });
+        doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {
             doc.moveDown(0.15);
-            doc.fontSize(12).font(subFont).fillColor('#555').text(info.sub_heading, { align: 'center' });
+            doc.fontSize(12); safeFont(doc, subFont, 'Helvetica').fillColor('#555').text(info.sub_heading, { align: 'center' });
             doc.fillColor('#000');
         }
         doc.moveDown(0.15);
@@ -490,10 +494,10 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
 
         const session = await getAcademicSession();
         doc.y = textStartY;
-        doc.fontSize(24).font(nameFont).text(info.school_name, { align: 'center' });
+        doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {
             doc.moveDown(0.15);
-            doc.fontSize(12).font(subFont).fillColor('#555').text(info.sub_heading, { align: 'center' });
+            doc.fontSize(12); safeFont(doc, subFont, 'Helvetica').fillColor('#555').text(info.sub_heading, { align: 'center' });
             doc.fillColor('#000');
         }
         doc.moveDown(0.15);

@@ -40,7 +40,7 @@ function registerFonts(doc) {
                 console.warn(`Font ${name} registration failed: ${e.message}`);
             }
         } else {
-            console.warn(`Font ${name} not found, using ${cfg.fallback}`);
+            console.warn(`Font ${name} not found`);
         }
     }
 }
