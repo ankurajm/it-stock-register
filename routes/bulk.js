@@ -98,11 +98,11 @@ router.post('/items', requireAuth, requireAdmin, upload.single('file'), validate
 
                 await trx.run(
                     `INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    row.asset_tag, row.category, row.brand || null, row.model || null,
+                    [row.asset_tag, row.category, row.brand || null, row.model || null,
                     row.serial_number || null, row.specifications || null, row.purchase_date || null,
                     row.purchase_price ? parseFloat(row.purchase_price) : null, row.vendor || null,
                     row.warranty_end || null, row.status || 'available', row.condition || 'new',
-                    row.location || null, row.notes || null
+                    row.location || null, row.notes || null]
                 );
                 added++;
             }
@@ -150,7 +150,7 @@ router.post('/users', requireAuth, requireAdmin, upload.single('file'), validate
                 const initials = row.initials || await generateInitials(row.username);
                 const password = row.password || generatePassword();
                 const hashed = bcrypt.hashSync(password, 8);
-                await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, row.username, hashed, initials, row.role || 'user');
+                await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [row.username, hashed, initials, row.role || 'user']);
                 results.push({ username: row.username, password, initials });
                 added++;
             }
@@ -239,14 +239,14 @@ router.post('/employees', requireAuth, requireAdmin, upload.single('file'), vali
                 const existingEmp = await trx.get(`SELECT id FROM employees WHERE emp_id = ?`, [emp_id]);
                 if (existingEmp) { skipped++; continue; }
 
-                await trx.run(`INSERT INTO employees (emp_id, name, designation, email, phone, class_teacher, subject_teacher, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, emp_id, name.trim(), designation, email, phone, classTeacher, subjectTeacher, 'active');
+                await trx.run(`INSERT INTO employees (emp_id, name, designation, email, phone, class_teacher, subject_teacher, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [emp_id, name.trim(), designation, email, phone, classTeacher, subjectTeacher, 'active']);
 
                 const existingUser = await trx.get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
                 if (!existingUser) {
                     const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
                     const password = generatePassword();
                     const hashed = bcrypt.hashSync(password, 8);
-                    await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, emp_id, hashed, initials, 'user');
+                    await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [emp_id, hashed, initials, 'user']);
                     results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
                 } else {
                     results.push({ emp_id, name: name.trim(), username: emp_id, password: '-', initials: '-', designation, class: classTeacher, subject: subjectTeacher });
