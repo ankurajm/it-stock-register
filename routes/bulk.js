@@ -10,6 +10,45 @@ const fs = require('fs');
 const config = require('../config/app');
 const { generateInitials, generatePassword, generateInitialsForEmployee } = require('../utils/initials');
 
+function cleanupStaleTempFiles() {
+    const tempDir = path.join(__dirname, '..', 'uploads', 'temp');
+    try {
+        const files = fs.readdirSync(tempDir);
+        const now = Date.now();
+        for (const f of files) {
+            const fp = path.join(tempDir, f);
+            try {
+                const stat = fs.statSync(fp);
+                if (now - stat.mtimeMs > 3600000) fs.unlinkSync(fp);
+            } catch (_) {}
+        }
+    } catch (_) {}
+}
+
+function validateItemsRow(row, i) {
+    const errs = [];
+    if (!row.asset_tag) errs.push('Row ' + i + ': asset_tag is required');
+    if (!row.category) errs.push('Row ' + i + ': category is required');
+    if (row.purchase_price && isNaN(parseFloat(row.purchase_price))) errs.push('Row ' + i + ': purchase_price must be a number');
+    if (row.purchase_date && !/^\d{4}-\d{2}-\d{2}$/.test(row.purchase_date)) errs.push('Row ' + i + ': purchase_date must be YYYY-MM-DD');
+    if (row.warranty_end && !/^\d{4}-\d{2}-\d{2}$/.test(row.warranty_end)) errs.push('Row ' + i + ': warranty_end must be YYYY-MM-DD');
+    return errs;
+}
+
+function validateUsersRow(row, i) {
+    const errs = [];
+    if (!row.username) errs.push('Row ' + i + ': username is required');
+    if (row.role && !['user', 'admin'].includes(row.role)) errs.push('Row ' + i + ': role must be "user" or "admin"');
+    return errs;
+}
+
+function validateEmployeesRow(row, i) {
+    const errs = [];
+    const name = row.name || row.teacher_name || row.employee_name || '';
+    if (!name.trim()) errs.push('Row ' + i + ': Name is required');
+    return errs;
+}
+
 function parseCSVLine(line) {
     const result = [];
     let current = '';
@@ -58,113 +97,178 @@ const upload = multer({
 });
 
 router.get('/items', requireAuth, requireAdmin, (req, res) => {
-    res.render('bulk/items', { error: null, success: null });
+    res.render('bulk/items', { error: null, success: null, preview: null });
 });
 
 router.get('/users', requireAuth, requireAdmin, (req, res) => {
-    res.render('bulk/users', { error: null, success: null });
+    res.render('bulk/users', { error: null, success: null, preview: null, results: null });
 });
 
 router.post('/items', requireAuth, requireAdmin, upload.single('file'), validateCsrf, async (req, res) => {
     try {
+        cleanupStaleTempFiles();
+
+        // Confirm step: process previously previewed file
+        if (req.body.confirm && req.body._tempFile) {
+            const tempPath = path.join(__dirname, '..', req.body._tempFile);
+            if (!fs.existsSync(tempPath)) {
+                return res.render('bulk/items', { error: 'Preview expired, please upload again', success: null, preview: null });
+            }
+            const content = fs.readFileSync(tempPath, 'utf8');
+            fs.unlinkSync(tempPath);
+
+            const lines = content.split('\n').filter(l => l.trim());
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
+            let added = 0, skipped = 0;
+
+            await transaction(async (trx) => {
+                for (let i = 1; i < lines.length; i++) {
+                    const vals = parseCSVLine(lines[i]);
+                    const row = {};
+                    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+                    const existing = await trx.get(`SELECT id FROM items WHERE asset_tag=?`, [row.asset_tag]);
+                    if (existing) { skipped++; continue; }
+                    await trx.run(
+                        `INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [row.asset_tag, row.category, row.brand || null, row.model || null,
+                        row.serial_number || null, row.specifications || null, row.purchase_date || null,
+                        row.purchase_price ? parseFloat(row.purchase_price) : null, row.vendor || null,
+                        row.warranty_end || null, row.status || 'available', row.condition || 'new',
+                        row.location || null, row.notes || null]
+                    );
+                    added++;
+                }
+            });
+            req.flash('success', added + ' item(s) imported. ' + skipped + ' skipped (duplicate asset tags).');
+            return res.redirect('/items');
+        }
+
+        // Preview step: parse, validate, show preview table
         if (!req.file) {
-            return res.render('bulk/items', { error: 'Please select a CSV file', success: null });
+            return res.render('bulk/items', { error: 'Please select a CSV file', success: null, preview: null });
         }
         const content = fs.readFileSync(req.file.path, 'utf8');
-        fs.unlinkSync(req.file.path);
-
         const lines = content.split('\n').filter(l => l.trim());
         if (lines.length < 2) {
-            return res.render('bulk/items', { error: 'CSV must have a header row and at least one data row', success: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/items', { error: 'CSV must have a header row and at least one data row', success: null, preview: null });
         }
 
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
         const required = ['asset_tag', 'category'];
         const missing = required.filter(r => !headers.includes(r));
         if (missing.length) {
-            return res.render('bulk/items', { error: 'Missing required columns: ' + missing.join(', '), success: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/items', { error: 'Missing required columns: ' + missing.join(', '), success: null, preview: null });
         }
 
-        let added = 0, skipped = 0;
+        const rows = [];
+        const errors = [];
+        for (let i = 1; i < lines.length; i++) {
+            const vals = parseCSVLine(lines[i]);
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+            const rowErrs = validateItemsRow(row, i + 1);
+            const existing = await get(`SELECT id FROM items WHERE asset_tag=?`, [row.asset_tag]);
+            rows.push({ data: row, errors: rowErrs, duplicate: !!existing });
+            if (rowErrs.length) errors.push(rowErrs.join('; '));
+        }
 
-        await transaction(async (trx) => {
-            for (let i = 1; i < lines.length; i++) {
-                const vals = parseCSVLine(lines[i]);
-                const row = {};
-                headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+        if (errors.length) {
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/items', { error: 'Validation errors found. Fix and re-upload.', success: null, preview: { rows, headers: headers.filter(h => ['asset_tag','category','brand','model','serial_number','status','condition','location'].includes(h)), tempFile: null } });
+        }
 
-                const existing = await trx.get(`SELECT id FROM items WHERE asset_tag=?`, [row.asset_tag]);
-                if (existing) { skipped++; continue; }
-
-                await trx.run(
-                    `INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [row.asset_tag, row.category, row.brand || null, row.model || null,
-                    row.serial_number || null, row.specifications || null, row.purchase_date || null,
-                    row.purchase_price ? parseFloat(row.purchase_price) : null, row.vendor || null,
-                    row.warranty_end || null, row.status || 'available', row.condition || 'new',
-                    row.location || null, row.notes || null]
-                );
-                added++;
-            }
-        });
-        req.flash('success', added + ' item(s) imported. ' + skipped + ' skipped (duplicate asset tags).');
-        res.redirect('/items');
+        // All valid → show preview
+        const tempRel = 'uploads/temp/' + path.basename(req.file.path);
+        res.render('bulk/items', { error: null, success: null, preview: { rows, headers: headers.filter(h => ['asset_tag','category','brand','model','serial_number','purchase_date','purchase_price','vendor','status','condition','location'].includes(h)), tempFile: tempRel } });
     } catch (err) {
         console.error('Bulk items error:', err.message);
-        res.render('bulk/items', { error: 'Import failed: ' + err.message, success: null });
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.render('bulk/items', { error: 'Import failed: ' + err.message, success: null, preview: null });
     }
 });
 
 router.post('/users', requireAuth, requireAdmin, upload.single('file'), validateCsrf, async (req, res) => {
     try {
+        cleanupStaleTempFiles();
+
+        if (req.body.confirm && req.body._tempFile) {
+            const tempPath = path.join(__dirname, '..', req.body._tempFile);
+            if (!fs.existsSync(tempPath)) {
+                return res.render('bulk/users', { error: 'Preview expired, please upload again', success: null, preview: null, results: null });
+            }
+            const content = fs.readFileSync(tempPath, 'utf8');
+            fs.unlinkSync(tempPath);
+
+            const lines = content.split('\n').filter(l => l.trim());
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
+            const results = [];
+            let added = 0, skipped = 0;
+
+            await transaction(async (trx) => {
+                for (let i = 1; i < lines.length; i++) {
+                    const vals = parseCSVLine(lines[i]);
+                    const row = {};
+                    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+                    const existing = await trx.get(`SELECT id FROM users WHERE username=?`, [row.username]);
+                    if (existing) { skipped++; continue; }
+                    const initials = row.initials || await generateInitials(row.username);
+                    const password = row.password || generatePassword();
+                    const hashed = bcrypt.hashSync(password, 8);
+                    await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [row.username, hashed, initials, row.role || 'user']);
+                    results.push({ username: row.username, password, initials });
+                    added++;
+                }
+            });
+            const msg = added + ' user(s) imported. ' + skipped + ' skipped (duplicate usernames).';
+            if (results.length > 0) {
+                return res.render('bulk/users', { error: null, success: msg, results, preview: null });
+            }
+            req.flash('success', msg);
+            return res.redirect('/users');
+        }
+
         if (!req.file) {
-            return res.render('bulk/users', { error: 'Please select a CSV file', success: null });
+            return res.render('bulk/users', { error: 'Please select a CSV file', success: null, preview: null, results: null });
         }
         const content = fs.readFileSync(req.file.path, 'utf8');
-        fs.unlinkSync(req.file.path);
-
         const lines = content.split('\n').filter(l => l.trim());
         if (lines.length < 2) {
-            return res.render('bulk/users', { error: 'CSV must have a header row and at least one data row', success: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/users', { error: 'CSV must have a header row and at least one data row', success: null, preview: null, results: null });
         }
 
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
-        const required = ['username'];
-        const missing = required.filter(r => !headers.includes(r));
+        const missing = ['username'].filter(r => !headers.includes(r));
         if (missing.length) {
-            return res.render('bulk/users', { error: 'Missing required columns: ' + missing.join(', '), success: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/users', { error: 'Missing required columns: ' + missing.join(', '), success: null, preview: null, results: null });
         }
 
-        const results = [];
-        let added = 0, skipped = 0;
-
-        await transaction(async (trx) => {
-            for (let i = 1; i < lines.length; i++) {
-                const vals = parseCSVLine(lines[i]);
-                const row = {};
-                headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
-
-                const existing = await trx.get(`SELECT id FROM users WHERE username=?`, [row.username]);
-                if (existing) { skipped++; continue; }
-
-                const initials = row.initials || await generateInitials(row.username);
-                const password = row.password || generatePassword();
-                const hashed = bcrypt.hashSync(password, 8);
-                await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [row.username, hashed, initials, row.role || 'user']);
-                results.push({ username: row.username, password, initials });
-                added++;
-            }
-        });
-        const msg = added + ' user(s) imported. ' + skipped + ' skipped (duplicate usernames).';
-        if (results.length > 0) {
-            res.render('bulk/users', { error: null, success: msg, results });
-        } else {
-            req.flash('success', msg);
-            res.redirect('/users');
+        const rows = [];
+        const errors = [];
+        for (let i = 1; i < lines.length; i++) {
+            const vals = parseCSVLine(lines[i]);
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+            const rowErrs = validateUsersRow(row, i + 1);
+            const existing = await get(`SELECT id FROM users WHERE username=?`, [row.username]);
+            rows.push({ data: row, errors: rowErrs, duplicate: !!existing });
+            if (rowErrs.length) errors.push(rowErrs.join('; '));
         }
+
+        if (errors.length) {
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/users', { error: 'Validation errors found. Fix and re-upload.', success: null, preview: { rows, headers: ['username','initials','role'], tempFile: null }, results: null });
+        }
+
+        const tempRel = 'uploads/temp/' + path.basename(req.file.path);
+        res.render('bulk/users', { error: null, success: null, preview: { rows, headers: ['username','initials','role'], tempFile: tempRel }, results: null });
     } catch (err) {
         console.error('Bulk users error:', err.message);
-        res.render('bulk/users', { error: 'Import failed: ' + err.message, success: null });
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.render('bulk/users', { error: 'Import failed: ' + err.message, success: null, preview: null, results: null });
     }
 });
 
@@ -194,71 +298,100 @@ async function nextEmpId(trx) {
 }
 
 router.get('/employees', requireAuth, requireAdmin, (req, res) => {
-    res.render('bulk/employees', { error: null, success: null, results: null });
+    res.render('bulk/employees', { error: null, success: null, preview: null, results: null });
 });
 
 router.post('/employees', requireAuth, requireAdmin, upload.single('file'), validateCsrf, async (req, res) => {
     try {
+        cleanupStaleTempFiles();
+
+        if (req.body.confirm && req.body._tempFile) {
+            const tempPath = path.join(__dirname, '..', req.body._tempFile);
+            if (!fs.existsSync(tempPath)) {
+                return res.render('bulk/employees', { error: 'Preview expired, please upload again', success: null, preview: null, results: null });
+            }
+            const content = fs.readFileSync(tempPath, 'utf8');
+            fs.unlinkSync(tempPath);
+
+            const lines = content.split('\n').filter(l => l.trim());
+            const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''));
+            const results = [];
+            let added = 0, skipped = 0;
+
+            await transaction(async (trx) => {
+                for (let i = 1; i < lines.length; i++) {
+                    const vals = parseCSVLine(lines[i]);
+                    const row = {};
+                    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+
+                    const name = row.name || row.teacher_name || row.employee_name || '';
+                    if (!name.trim()) { skipped++; continue; }
+
+                    const emp_id = await nextEmpId(trx);
+                    const designation = row.designation || 'Teacher';
+                    const phone = row.contact || row.phone || '';
+                    const email = row.email || '';
+                    const classTeacher = row.class || row.class_teacher || '';
+                    const subjectTeacher = row.subject || row.subject_teacher || '';
+
+                    await trx.run(`INSERT INTO employees (emp_id, name, designation, email, phone, class_teacher, subject_teacher, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [emp_id, name.trim(), designation, email, phone, classTeacher, subjectTeacher, 'active']);
+
+                    const existingUser = await trx.get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
+                    if (!existingUser) {
+                        const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
+                        const password = generatePassword();
+                        const hashed = bcrypt.hashSync(password, 8);
+                        await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [emp_id, hashed, initials, 'user']);
+                        results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
+                    } else {
+                        results.push({ emp_id, name: name.trim(), username: emp_id, password: '-', initials: '-', designation, class: classTeacher, subject: subjectTeacher });
+                    }
+                    added++;
+                }
+            });
+            const msg = added + ' employee(s) imported. ' + skipped + ' skipped.';
+            return res.render('bulk/employees', { error: null, success: msg, results, preview: null });
+        }
+
         if (!req.file) {
-            return res.render('bulk/employees', { error: 'Please select a CSV file', success: null, results: null });
+            return res.render('bulk/employees', { error: 'Please select a CSV file', success: null, preview: null, results: null });
         }
         const content = fs.readFileSync(req.file.path, 'utf8');
-        fs.unlinkSync(req.file.path);
-
         const lines = content.split('\n').filter(l => l.trim());
         if (lines.length < 2) {
-            return res.render('bulk/employees', { error: 'CSV must have a header row and at least one data row', success: null, results: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/employees', { error: 'CSV must have a header row and at least one data row', success: null, preview: null, results: null });
         }
 
         const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''));
-        const required = ['name'];
-        const missing = required.filter(r => !headers.includes(r));
+        const missing = ['name'].filter(r => !headers.includes(r));
         if (missing.length) {
-            return res.render('bulk/employees', { error: 'Missing required column: name', success: null, results: null });
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/employees', { error: 'Missing required column: name', success: null, preview: null, results: null });
         }
 
-        const results = [];
-        let added = 0, skipped = 0, errors = [];
+        const rows = [];
+        const errors = [];
+        for (let i = 1; i < lines.length; i++) {
+            const vals = parseCSVLine(lines[i]);
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+            const rowErrs = validateEmployeesRow(row, i + 1);
+            rows.push({ data: row, errors: rowErrs });
+            if (rowErrs.length) errors.push(rowErrs.join('; '));
+        }
 
-        await transaction(async (trx) => {
-            for (let i = 1; i < lines.length; i++) {
-                const vals = parseCSVLine(lines[i]);
-                const row = {};
-                headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+        if (errors.length) {
+            fs.unlinkSync(req.file.path);
+            return res.render('bulk/employees', { error: 'Validation errors found. Fix and re-upload.', success: null, preview: { rows, headers: ['name','designation','contact','email','class','subject'], tempFile: null }, results: null });
+        }
 
-                const name = row.name || row.teacher_name || row.employee_name || '';
-                if (!name.trim()) { errors.push('Row ' + (i + 1) + ': Name is empty'); skipped++; continue; }
-
-                const emp_id = await nextEmpId(trx);
-                const designation = row.designation || 'Teacher';
-                const phone = row.contact || row.phone || '';
-                const email = row.email || '';
-                const classTeacher = row.class || row.class_teacher || '';
-                const subjectTeacher = row.subject || row.subject_teacher || '';
-
-                const existingEmp = await trx.get(`SELECT id FROM employees WHERE emp_id = ?`, [emp_id]);
-                if (existingEmp) { skipped++; continue; }
-
-                await trx.run(`INSERT INTO employees (emp_id, name, designation, email, phone, class_teacher, subject_teacher, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [emp_id, name.trim(), designation, email, phone, classTeacher, subjectTeacher, 'active']);
-
-                const existingUser = await trx.get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
-                if (!existingUser) {
-                    const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
-                    const password = generatePassword();
-                    const hashed = bcrypt.hashSync(password, 8);
-                    await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [emp_id, hashed, initials, 'user']);
-                    results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
-                } else {
-                    results.push({ emp_id, name: name.trim(), username: emp_id, password: '-', initials: '-', designation, class: classTeacher, subject: subjectTeacher });
-                }
-                added++;
-            }
-        });
-        const msg = added + ' employee(s) imported. ' + skipped + ' skipped.';
-        res.render('bulk/employees', { error: errors.length ? errors.join('; ') : null, success: msg, results });
+        const tempRel = 'uploads/temp/' + path.basename(req.file.path);
+        res.render('bulk/employees', { error: null, success: null, preview: { rows, headers: ['name','designation','contact','email','class','subject'], tempFile: tempRel }, results: null });
     } catch (err) {
         console.error('Bulk employees error:', err.message);
-        res.render('bulk/employees', { error: 'Import failed: ' + err.message, success: null, results: null });
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.render('bulk/employees', { error: 'Import failed: ' + err.message, success: null, preview: null, results: null });
     }
 });
 

@@ -7,6 +7,99 @@
     <a href="/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
+<% if (preview && preview.tempFile) { %>
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-eye me-1"></i> Preview — <%= preview.rows.length %> row(s)</span>
+        <span class="badge bg-light text-primary"><%= preview.rows.filter(r => !r.errors.length && !r.duplicate).length %> valid</span>
+    </div>
+    <div class="table-responsive" style="max-height:400px">
+        <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th>#</th>
+                    <% preview.headers.forEach(h => { %>
+                    <th><%= h %></th>
+                    <% }); %>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% preview.rows.forEach((r, i) => { %>
+                <tr class="<%= r.errors.length ? 'table-danger' : r.duplicate ? 'table-warning' : 'table-success' %>">
+                    <td><%= i + 1 %></td>
+                    <% preview.headers.forEach(h => { %>
+                    <td><%= r.data[h] || '-' %></td>
+                    <% }); %>
+                    <td>
+                        <% if (r.errors.length) { %>
+                        <span class="text-danger" title="<%= r.errors.join('; ') %>"><i class="bi bi-x-circle"></i> errors</span>
+                        <% } else if (r.duplicate) { %>
+                        <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> duplicate</span>
+                        <% } else { %>
+                        <span class="text-success"><i class="bi bi-check-circle"></i> ready</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-light">
+        <form method="POST" action="/bulk/items">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="confirm" value="1">
+            <input type="hidden" name="_tempFile" value="<%= preview.tempFile %>">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Confirm Import</button>
+                <a href="/bulk/items" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+<% } else if (preview) { %>
+<div class="card mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <i class="bi bi-exclamation-triangle me-1"></i> Validation Errors — <%= preview.rows.length %> row(s)
+    </div>
+    <div class="table-responsive" style="max-height:400px">
+        <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th>#</th>
+                    <% preview.headers.forEach(h => { %>
+                    <th><%= h %></th>
+                    <% }); %>
+                    <th>Errors</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% preview.rows.forEach((r, i) => { %>
+                <tr class="<%= r.errors.length ? 'table-danger' : r.duplicate ? 'table-warning' : 'table-success' %>">
+                    <td><%= i + 1 %></td>
+                    <% preview.headers.forEach(h => { %>
+                    <td><%= r.data[h] || '-' %></td>
+                    <% }); %>
+                    <td>
+                        <% if (r.errors.length) { %>
+                        <span class="text-danger"><%= r.errors.join('; ') %></span>
+                        <% } else if (r.duplicate) { %>
+                        <span class="text-warning">duplicate asset_tag</span>
+                        <% } else { %>
+                        <span class="text-success">ok</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <a href="/bulk/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Fix &amp; Re-upload</a>
+    </div>
+</div>
+<% } %>
+
 <div class="card">
     <div class="card-body p-4">
         <h5 class="fw-semibold mb-3">CSV Format</h5>
@@ -33,7 +126,7 @@
                 <label class="form-label">Select CSV File <span class="text-danger">*</span></label>
                 <input type="file" name="file" class="form-control" accept=".csv" required>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Import Items</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i> Preview &amp; Import</button>
         </form>
     </div>
 </div>
