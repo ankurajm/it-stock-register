@@ -80,25 +80,27 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/add', requireAuth, async (req, res) => {
     try {
         const categories = await all(`SELECT * FROM categories ORDER BY name`);
-        const { category_id } = req.query;
-        let nextTag = '';
-        if (category_id) {
-            const cat = await get(`SELECT * FROM categories WHERE id = ?`, [category_id]);
-            if (cat) {
-                const last = await get(`SELECT asset_tag FROM items WHERE asset_tag LIKE ? ORDER BY id DESC LIMIT 1`, [cat.prefix + '-%']);
-                if (last) {
-                    const num = parseInt(last.asset_tag.split('-')[1]) || 0;
-                    nextTag = cat.prefix + '-' + String(num + 1).padStart(4, '0');
-                } else {
-                    nextTag = cat.prefix + '-0001';
-                }
-            }
-        }
-        res.render('items/add', { error: null, item: null, categories, nextTag, selectedCategoryId: category_id || '' });
+        res.render('items/add', { error: null, item: null, categories, nextTag: '', selectedCategoryId: '' });
     } catch (err) {
         console.error('Add item form error:', err.message);
         req.flash('error', 'Failed to load form');
         res.redirect('/items');
+    }
+});
+
+router.get('/next-tag/:categoryId', requireAuth, async (req, res) => {
+    try {
+        const cat = await get(`SELECT * FROM categories WHERE id = ?`, [req.params.categoryId]);
+        if (!cat) return res.json({ tag: '' });
+        const last = await get(`SELECT asset_tag FROM items WHERE asset_tag LIKE ? ORDER BY id DESC LIMIT 1`, [cat.prefix + '-%']);
+        if (last) {
+            const num = parseInt(last.asset_tag.split('-')[1]) || 0;
+            return res.json({ tag: cat.prefix + '-' + String(num + 1).padStart(4, '0') });
+        }
+        return res.json({ tag: cat.prefix + '-0001' });
+    } catch (err) {
+        console.error('Next tag error:', err.message);
+        res.json({ tag: '' });
     }
 });
 
@@ -273,6 +275,52 @@ router.post('/bulk-clone', requireAuth, requireAdmin, async (req, res) => {
         console.error('Bulk clone error:', err.message);
         const categories = await all(`SELECT * FROM categories ORDER BY name`);
         res.render('items/bulk-clone', { error: 'Clone failed: ' + err.message, categories });
+    }
+});
+
+router.post('/seed-sample', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const cats = await all(`SELECT * FROM categories ORDER BY name`);
+        let added = 0, exists = 0;
+        for (const cat of cats) {
+            const last = await get(`SELECT asset_tag FROM items WHERE asset_tag LIKE ? ORDER BY id DESC LIMIT 1`, [cat.prefix + '-%']);
+            let num = 0;
+            if (last) {
+                const n = parseInt(last.asset_tag.split('-')[1]) || 0;
+                num = n + 1;
+            } else {
+                num = 1;
+            }
+            const tag = cat.prefix + '-' + String(num).padStart(4, '0');
+            const existing = await get(`SELECT id FROM items WHERE asset_tag=?`, [tag]);
+            if (existing) { exists++; continue; }
+
+            const sampleSerials = {
+                'Laptop': 'SN-SAMPLE-' + cat.prefix,
+                'Desktop': 'SN-SAMPLE-' + cat.prefix,
+                'Monitor': 'SN-SAMPLE-' + cat.prefix,
+                'Printer': 'SN-SAMPLE-' + cat.prefix,
+                'Accessories': 'SN-SAMPLE-' + cat.prefix,
+                'Mobile': 'SN-SAMPLE-' + cat.prefix,
+                'Tablet': 'SN-SAMPLE-' + cat.prefix,
+                'Network Equipment': 'SN-SAMPLE-' + cat.prefix,
+                'Other': 'SN-SAMPLE-' + cat.prefix
+            };
+            const serial = sampleSerials[cat.name] || 'SN-SAMPLE-' + cat.prefix;
+
+            let qrCode = '';
+            try { qrCode = await QRCode.toDataURL(serial); } catch (e) {}
+
+            await run(`INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes, qr_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tag, cat.name, 'Sample Brand', 'Sample Model', serial, 'Sample specs', '2025-01-01', 1000, 'Sample Vendor', '2028-01-01', 'available', 'new', 'Sample Location', 'Sample item for testing', qrCode]);
+            added++;
+        }
+        req.flash('success', added + ' sample item(s) added. ' + exists + ' categories already had items.');
+        res.redirect('/items');
+    } catch (err) {
+        console.error('Seed sample error:', err.message);
+        req.flash('error', 'Failed to add sample items: ' + err.message);
+        res.redirect('/items');
     }
 });
 

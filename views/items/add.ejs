@@ -19,10 +19,10 @@
                 <% if (!item) { %>
                 <div class="col-md-4">
                     <label class="form-label">Category <span class="text-danger">*</span></label>
-                    <select name="category_select" class="form-select" id="categorySelect" onchange="if(this.value) window.location='/items/add?category_id=' + this.value">
+                    <select name="category_select" class="form-select" id="categorySelect">
                         <option value="">-- Select Category First --</option>
                         <% categories.forEach(c => { %>
-                        <option value="<%= c.id %>" <%= selectedCategoryId == c.id ? 'selected' : '' %>><%= c.name %> (<%= c.prefix %>)</option>
+                        <option value="<%= c.id %>"><%= c.name %> (<%= c.prefix %>)</option>
                         <% }); %>
                     </select>
                 </div>
@@ -30,7 +30,7 @@
 
                 <div class="col-md-4">
                     <label class="form-label">Asset Tag <span class="text-danger">*</span></label>
-                    <input type="text" name="asset_tag" class="form-control" value="<%= item ? item.asset_tag : nextTag %>" required <%= !item && !nextTag ? 'readonly placeholder="Select category first"' : '' %>>
+                    <input type="text" name="asset_tag" class="form-control" id="assetTagInput" value="<%= item ? item.asset_tag : '' %>" required <%= item ? '' : 'placeholder="Select category to auto-generate"' %>>
                     <div class="form-text">Alphanumeric, auto-generated from category</div>
                 </div>
 
@@ -118,3 +118,18 @@
         </form>
     </div>
 </div>
+
+<% if (!item) { %>
+<script>
+document.getElementById('categorySelect').addEventListener('change', function() {
+    const catId = this.value;
+    const tagInput = document.getElementById('assetTagInput');
+    if (!catId) { tagInput.value = ''; tagInput.placeholder = 'Select category to auto-generate'; return; }
+    tagInput.placeholder = 'Generating...';
+    fetch('/items/next-tag/' + catId)
+        .then(r => r.json())
+        .then(data => { tagInput.value = data.tag; tagInput.placeholder = 'Auto-generated'; })
+        .catch(() => { tagInput.placeholder = 'Select category first'; });
+});
+</script>
+<% } %>
