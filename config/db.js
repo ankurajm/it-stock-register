@@ -135,7 +135,8 @@ async function migrate() {
         `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS sub_heading TEXT DEFAULT ''`,
         `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS academic_session TEXT DEFAULT ''`,
         `ALTER TABLE employees ADD COLUMN IF NOT EXISTS class_teacher TEXT DEFAULT ''`,
-        `ALTER TABLE employees ADD COLUMN IF NOT EXISTS subject_teacher TEXT DEFAULT ''`
+        `ALTER TABLE employees ADD COLUMN IF NOT EXISTS subject_teacher TEXT DEFAULT ''`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS school_logo_data TEXT DEFAULT ''`
     ];
     for (const sql of migrations) {
         try { await getDB().query(sql); } catch (e) { /* ignore */ }

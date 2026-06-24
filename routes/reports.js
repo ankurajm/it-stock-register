@@ -39,6 +39,32 @@ function safeFont(doc, name, fallback) {
     try { return doc.font(name); } catch (e) { return doc.font(fallback || 'Helvetica'); }
 }
 
+function getLogoBuffer(info) {
+    if (info.school_logo && fs.existsSync(path.join(config.uploadDir, info.school_logo))) {
+        return { type: 'file', path: path.join(config.uploadDir, info.school_logo) };
+    }
+    if (info.school_logo_data) {
+        return { type: 'buffer', data: Buffer.from(info.school_logo_data, 'base64') };
+    }
+    return null;
+}
+
+function drawSchoolLogo(doc, info, x, y, size) {
+    const logo = getLogoBuffer(info);
+    if (!logo) return false;
+    try {
+        if (logo.type === 'file') {
+            doc.image(logo.path, x, y, { width: size, height: size });
+        } else {
+            doc.image(logo.data, x, y, { width: size, height: size });
+        }
+        return true;
+    } catch (e) {
+        console.warn('Logo render error:', e.message);
+        return false;
+    }
+}
+
 async function addReportHeader(doc, title) {
     const info = await getSchoolInfo();
     registerFonts(doc);
@@ -49,12 +75,7 @@ async function addReportHeader(doc, title) {
     const textCenterX = pageWidth / 2;
     const textStartY = 50;
 
-    if (info.school_logo && fs.existsSync(path.join(config.uploadDir, info.school_logo))) {
-        try {
-            const logoY = 50;
-            doc.image(path.join(config.uploadDir, info.school_logo), logoX, logoY, { width: logoSize, height: logoSize });
-        } catch (e) { /* logo skip */ }
-    }
+    drawSchoolLogo(doc, info, 30, 50, 60);
 
     const session = await getAcademicSession();
     const nameFont = 'Olde English';
@@ -310,22 +331,10 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
         const pageWidth = doc.page.width - 80;
         registerFonts(doc);
 
-        const logoSize = 60;
-        const logoX = 40;
-        const textCenterX = doc.page.width / 2;
-        const textStartY = 60;
-        const nameFont = 'Olde English';
-        const subFont = 'Pristina';
-
-        if (info.school_logo && fs.existsSync(path.join(config.uploadDir, info.school_logo))) {
-            try {
-                const logoY = 50;
-                doc.image(path.join(config.uploadDir, info.school_logo), logoX, logoY, { width: logoSize, height: logoSize });
-            } catch (e) { /* logo skip */ }
-        }
+        drawSchoolLogo(doc, info, 40, 50, 60);
 
         const session = await getAcademicSession();
-        doc.y = textStartY;
+        doc.y = 60;
         doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {
             doc.moveDown(0.15);
@@ -478,22 +487,10 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
         const pageWidth = doc.page.width - 80;
         registerFonts(doc);
 
-        const logoSize = 60;
-        const logoX = 40;
-        const textCenterX = doc.page.width / 2;
-        const textStartY = 60;
-        const nameFont = 'Olde English';
-        const subFont = 'Pristina';
-
-        if (info.school_logo && fs.existsSync(path.join(config.uploadDir, info.school_logo))) {
-            try {
-                const logoY = 50;
-                doc.image(path.join(config.uploadDir, info.school_logo), logoX, logoY, { width: logoSize, height: logoSize });
-            } catch (e) { /* logo skip */ }
-        }
+        drawSchoolLogo(doc, info, 40, 50, 60);
 
         const session = await getAcademicSession();
-        doc.y = textStartY;
+        doc.y = 60;
         doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {
             doc.moveDown(0.15);
