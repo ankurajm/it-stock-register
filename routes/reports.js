@@ -334,6 +334,8 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
         drawSchoolLogo(doc, info, 40, 50, 60);
 
         const session = await getAcademicSession();
+        const nameFont = 'Olde English';
+        const subFont = 'Pristina';
         doc.y = 60;
         doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {
@@ -490,6 +492,8 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
         drawSchoolLogo(doc, info, 40, 50, 60);
 
         const session = await getAcademicSession();
+        const nameFont = 'Olde English';
+        const subFont = 'Pristina';
         doc.y = 60;
         doc.fontSize(24); safeFont(doc, nameFont, 'Helvetica-Bold').text(info.school_name, { align: 'center' });
         if (info.sub_heading) {

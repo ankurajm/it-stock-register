@@ -24,7 +24,7 @@ function convertParams(sql, params) {
         .replace(/datetime\('now'\)/g, 'NOW()')
         .replace(/date\('now', '\+30 days'\)/g, "NOW() + INTERVAL '30 days'")
         .replace(/date\('now'\)/g, 'CURRENT_DATE')
-        .replace(/date\((\w+)\)/g, "NULLIF($1, '')::date")
+        .replace(/date\((\w+)\)/g, "NULLIF($1::text, '')::date")
         .replace(/\bLIKE\b/g, 'ILIKE');
     if (pgSql.includes('AUTOINCREMENT') || pgSql.includes('AUTOINCREMENT')) {
         pgSql = pgSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY');
