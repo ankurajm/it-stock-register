@@ -264,37 +264,57 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
 
 router.post('/seed-test', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const testEmp = {
-            emp_id: 'EMP0001',
-            name: 'Krishna Verma',
-            designation: 'Teacher',
-            department: 'Computer Science',
-            email: 'knv@mcselearning.com',
-            phone: '9856974562',
-            class_teacher: 'V-A',
-            subject_teacher: 'Computer Science'
-        };
+        const testUsers = [
+            {
+                emp_id: 'USR',
+                name: 'Krishna Verma',
+                designation: 'Teacher',
+                department: 'Computer Science',
+                email: 'knv@mcselearning.com',
+                phone: '9856974562',
+                class_teacher: 'V-A',
+                subject_teacher: 'Computer Science',
+                initials: 'KNV'
+            },
+            {
+                emp_id: 'EMP0001',
+                name: 'Krishna Verma',
+                designation: 'Teacher',
+                department: 'Computer Science',
+                email: 'knv@mcselearning.com',
+                phone: '9856974562',
+                class_teacher: 'V-A',
+                subject_teacher: 'Computer Science',
+                initials: 'KNV'
+            }
+        ];
 
-        const existing = await get(`SELECT id FROM employees WHERE emp_id = ?`, [testEmp.emp_id]);
-        if (existing) {
-            req.flash('error', 'Test employee EMP0001 already exists');
-            return res.redirect('/employees');
+        let added = 0;
+        for (const emp of testUsers) {
+            const existing = await get(`SELECT id FROM employees WHERE emp_id = ?`, [emp.emp_id]);
+            if (existing) {
+                await run(`UPDATE employees SET name=?, department=?, designation=?, email=?, phone=?, class_teacher=?, subject_teacher=? WHERE emp_id=?`,
+                    [emp.name, emp.department, emp.designation, emp.email, emp.phone, emp.class_teacher, emp.subject_teacher, emp.emp_id]);
+            } else {
+                await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [emp.emp_id, emp.name, emp.department, emp.designation, emp.email, emp.phone, '2025-01-15', 'active', emp.class_teacher, emp.subject_teacher]);
+            }
+
+            const existingUser = await get(`SELECT id, initials FROM users WHERE username = ?`, [emp.emp_id]);
+            if (existingUser) {
+                if (!existingUser.initials) {
+                    await run(`UPDATE users SET initials = ? WHERE username = ?`, [emp.initials, emp.emp_id]);
+                }
+            } else {
+                const password = 'test1234';
+                const hashed = bcrypt.hashSync(password, 8);
+                await run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`,
+                    [emp.emp_id, hashed, emp.initials, 'user']);
+            }
+            added++;
         }
 
-        await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [testEmp.emp_id, testEmp.name, testEmp.department, testEmp.designation, testEmp.email, testEmp.phone, '2025-01-15', 'active', testEmp.class_teacher, testEmp.subject_teacher]);
-
-        const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [testEmp.emp_id]);
-        if (!existingUser) {
-            const password = 'test1234';
-            const hashed = bcrypt.hashSync(password, 8);
-            await run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`,
-                [testEmp.emp_id, hashed, 'KNV', 'user']);
-            req.flash('success', `Test employee added. Login: ${testEmp.emp_id} / test1234`);
-        } else {
-            req.flash('success', 'Test employee added (user account already existed)');
-        }
-
+        req.flash('success', added + ' test employee(s) created/updated. Login: USR or EMP0001 / test1234');
         res.redirect('/employees');
     } catch (err) {
         console.error('Seed test employee error:', err.message);
