@@ -262,4 +262,45 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
     }
 });
 
+router.post('/seed-test', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const testEmp = {
+            emp_id: 'EMP0001',
+            name: 'Krishna Verma',
+            designation: 'Teacher',
+            department: 'Computer Science',
+            email: 'knv@mcselearning.com',
+            phone: '9856974562',
+            class_teacher: 'V-A',
+            subject_teacher: 'Computer Science'
+        };
+
+        const existing = await get(`SELECT id FROM employees WHERE emp_id = ?`, [testEmp.emp_id]);
+        if (existing) {
+            req.flash('error', 'Test employee EMP0001 already exists');
+            return res.redirect('/employees');
+        }
+
+        await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [testEmp.emp_id, testEmp.name, testEmp.department, testEmp.designation, testEmp.email, testEmp.phone, '2025-01-15', 'active', testEmp.class_teacher, testEmp.subject_teacher]);
+
+        const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [testEmp.emp_id]);
+        if (!existingUser) {
+            const password = 'test1234';
+            const hashed = bcrypt.hashSync(password, 8);
+            await run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`,
+                [testEmp.emp_id, hashed, 'KNV', 'user']);
+            req.flash('success', `Test employee added. Login: ${testEmp.emp_id} / test1234`);
+        } else {
+            req.flash('success', 'Test employee added (user account already existed)');
+        }
+
+        res.redirect('/employees');
+    } catch (err) {
+        console.error('Seed test employee error:', err.message);
+        req.flash('error', 'Failed to add test employee: ' + err.message);
+        res.redirect('/employees');
+    }
+});
+
 module.exports = router;

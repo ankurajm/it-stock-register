@@ -6,6 +6,10 @@
     </div>
     <div class="d-flex gap-2">
         <a href="/bulk/employees" class="btn btn-outline-info"><i class="bi bi-upload"></i> Bulk Import</a>
+        <form method="POST" action="/employees/seed-test" style="display:inline" onsubmit="return confirm('Add test employee Krishna Verma (EMP0001)?')">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-person-plus"></i> Add Test Employee</button>
+        </form>
         <div class="dropdown">
             <button class="btn btn-outline-danger dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-download me-1"></i> Credentials</button>
             <ul class="dropdown-menu dropdown-menu-end">
