@@ -330,4 +330,49 @@ router.post('/seed-sample', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
+router.post('/seed-fixed', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const fixedAssets = [
+            { category: 'Other', brand: 'Canon', model: 'imageRUNNER 2625', serial: 'FIX-XEROX-001', location: 'Admin Block - Office Room', notes: 'Main photocopier for administrative use' },
+            { category: 'Other', brand: 'Hikvision', model: 'DS-2CE16D0T', serial: 'FIX-CCTV-001', location: 'Main Entrance - Gate', notes: 'CCTV camera at main gate' },
+            { category: 'Other', brand: 'Hikvision', model: 'DS-2CE16D0T', serial: 'FIX-CCTV-002', location: 'Corridor - Floor 2', notes: 'CCTV camera on 2nd floor corridor' },
+            { category: 'Other', brand: 'Epson', model: 'EB-X51', serial: 'FIX-PROJ-001', location: 'Exam Cell - Hall A', notes: 'Projector for exam cell presentations' },
+            { category: 'Other', brand: 'APC', model: 'Smart-UPS 1500', serial: 'FIX-UPS-001', location: 'Server Room', notes: 'UPS for server room power backup' },
+            { category: 'Other', brand: 'Dell', model: 'PowerEdge T350', serial: 'FIX-SRV-001', location: 'Server Room', notes: 'Main application server' },
+            { category: 'Other', brand: 'Syscom', model: '16-Port Managed', serial: 'FIX-SW-001', location: 'Server Room', notes: 'Core network switch' },
+            { category: 'Other', brand: 'Canon', model: 'imageRUNNER 2630', serial: 'FIX-XEROX-002', location: 'Staff Room', notes: 'Photocopier for staff room' },
+            { category: 'Other', brand: 'Hikvision', model: 'DS-2CE16D0T', serial: 'FIX-CCTV-003', location: 'Playground - North Side', notes: 'CCTV camera at playground' },
+            { category: 'Other', brand: 'VGuard', model: 'Digital 1500', serial: 'FIX-INV-001', location: 'Admin Block - Server Room', notes: 'Inverter for admin block' }
+        ];
+
+        let added = 0, skipped = 0;
+        for (const asset of fixedAssets) {
+            const existing = await get(`SELECT id FROM items WHERE serial_number=?`, [asset.serial]);
+            if (existing) { skipped++; continue; }
+
+            const cat = await get(`SELECT * FROM categories WHERE name=?`, [asset.category]);
+            const prefix = cat ? cat.prefix : 'OTH';
+            const last = await get(`SELECT asset_tag FROM items WHERE asset_tag LIKE ? ORDER BY id DESC LIMIT 1`, [prefix + '-%']);
+            let num = 1;
+            if (last) {
+                num = (parseInt(last.asset_tag.split('-')[1]) || 0) + 1;
+            }
+            const tag = prefix + '-' + String(num).padStart(4, '0');
+
+            let qrCode = '';
+            try { qrCode = await QRCode.toDataURL(asset.serial); } catch (e) {}
+
+            await run(`INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes, qr_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tag, asset.category, asset.brand, asset.model, asset.serial, '', '2025-01-01', null, '', '2028-01-01', 'fixed', 'new', asset.location, asset.notes, qrCode]);
+            added++;
+        }
+        req.flash('success', added + ' fixed asset(s) added. ' + skipped + ' already existed.');
+        res.redirect('/items');
+    } catch (err) {
+        console.error('Seed fixed assets error:', err.message);
+        req.flash('error', 'Failed to add fixed assets: ' + err.message);
+        res.redirect('/items');
+    }
+});
+
 module.exports = router;
