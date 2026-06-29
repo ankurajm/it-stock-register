@@ -26,10 +26,16 @@ router.post('/login', require('express-rate-limit')({
             req.flash('error', 'Invalid username or password');
             return res.redirect('/login');
         }
-        req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
-        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
-        req.flash('success', 'Welcome back, ' + user.username + '!');
-        res.redirect('/');
+        req.session.regenerate((err) => {
+            if (err) {
+                req.flash('error', 'Login failed. Please try again.');
+                return res.redirect('/login');
+            }
+            req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+            req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+            req.flash('success', 'Welcome back, ' + user.username + '!');
+            res.redirect('/');
+        });
     } catch (err) {
         console.error('Login error:', err.message);
         req.flash('error', 'Login failed. Please try again.');
@@ -62,10 +68,16 @@ router.post('/login/admin', require('express-rate-limit')({
             req.flash('error', 'Admin access denied. Invalid credentials.');
             return res.redirect('/login/admin');
         }
-        req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
-        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
-        req.flash('success', 'Welcome back, ' + user.username + '!');
-        res.redirect('/');
+        req.session.regenerate((err) => {
+            if (err) {
+                req.flash('error', 'Login failed. Please try again.');
+                return res.redirect('/login/admin');
+            }
+            req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
+            req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+            req.flash('success', 'Welcome back, ' + user.username + '!');
+            res.redirect('/');
+        });
     } catch (err) {
         console.error('Admin login error:', err.message);
         req.flash('error', 'Login failed. Please try again.');
@@ -99,8 +111,8 @@ router.post('/change-password', requireAuth, require('express-rate-limit')({
         if (!user || !bcrypt.compareSync(current_password, user.password)) {
             return res.render('change-password', { layout: false, error: 'Current password is incorrect' });
         }
-        if (new_password.length < 4) {
-            return res.render('change-password', { layout: false, error: 'New password must be at least 4 characters' });
+        if (new_password.length < 8) {
+            return res.render('change-password', { layout: false, error: 'New password must be at least 8 characters' });
         }
         if (new_password !== confirm_password) {
             return res.render('change-password', { layout: false, error: 'Passwords do not match' });

@@ -40,6 +40,7 @@
                     <option value="">All Status</option>
                     <option value="available" <%= status === 'available' ? 'selected' : '' %>>Available</option>
                     <option value="allocated" <%= status === 'allocated' ? 'selected' : '' %>>Allocated</option>
+                    <option value="fixed" <%= status === 'fixed' ? 'selected' : '' %>>Fixed (Permanent)</option>
                     <option value="maintenance" <%= status === 'maintenance' ? 'selected' : '' %>>Maintenance</option>
                     <option value="disposed" <%= status === 'disposed' ? 'selected' : '' %>>Disposed</option>
                 </select>
@@ -94,6 +95,7 @@
                     <td>
                         <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>
                         <% } else if (item.status === 'allocated') { %><span class="badge bg-warning text-dark">Allocated</span>
+                        <% } else if (item.status === 'fixed') { %><span class="badge bg-info">Fixed</span>
                         <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
                         <% } else if (item.status === 'disposed') { %><span class="badge bg-dark">Disposed</span>
                         <% } else { %><span class="badge bg-secondary"><%= item.status %></span><% } %>

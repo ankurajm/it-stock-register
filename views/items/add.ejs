@@ -53,9 +53,14 @@
                     <input type="text" name="serial_number" class="form-control" value="<%= item ? item.serial_number : '' %>">
                     <div class="form-text">QR code will be auto-generated from serial number</div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" id="normalLocationGroup" style="<%= item && item.status === 'fixed' ? 'display:none' : '' %>">
                     <label class="form-label">Location</label>
                     <input type="text" name="location" class="form-control" value="<%= item ? item.location : '' %>" placeholder="Floor 3, Room 301">
+                </div>
+                <div class="col-md-4" id="fixedLocationGroup" style="<%= item && item.status === 'fixed' ? '' : 'display:none' %>">
+                    <label class="form-label">Fixed Location <span class="text-danger">*</span></label>
+                    <input type="text" name="location" id="fixedLocation" class="form-control" value="<%= item ? item.location : '' %>" placeholder="e.g. Exam Cell, Room 101" <%= item && item.status === 'fixed' ? 'required' : '' %>>
+                    <div class="form-text">Permanent installation location (will not be moved)</div>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Specifications</label>
@@ -82,6 +87,7 @@
                     <select name="status" class="form-select">
                         <option value="available" <%= !item || item.status === 'available' ? 'selected' : '' %>>Available</option>
                         <option value="allocated" <%= item && item.status === 'allocated' ? 'selected' : '' %>>Allocated</option>
+                        <option value="fixed" <%= item && item.status === 'fixed' ? 'selected' : '' %>>Fixed (Permanent Location)</option>
                         <option value="maintenance" <%= item && item.status === 'maintenance' ? 'selected' : '' %>>Maintenance</option>
                         <option value="disposed" <%= item && item.status === 'disposed' ? 'selected' : '' %>>Disposed</option>
                     </select>
@@ -145,6 +151,14 @@ document.getElementById('categorySelect').addEventListener('change', function() 
         tagInput.value = '';
         tagInput.placeholder = 'Select category to auto-generate';
     }
+});
+
+document.getElementById('statusSelect').addEventListener('change', function() {
+    const isFixed = this.value === 'fixed';
+    document.getElementById('normalLocationGroup').style.display = isFixed ? 'none' : '';
+    document.getElementById('fixedLocationGroup').style.display = isFixed ? '' : 'none';
+    const fixedInput = document.getElementById('fixedLocation');
+    if (fixedInput) fixedInput.required = isFixed;
 });
 </script>
 <% } %>

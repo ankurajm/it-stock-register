@@ -75,8 +75,8 @@ router.post('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
 router.post('/reset-password/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { new_password } = req.body;
-        if (!new_password || new_password.length < 4) {
-            req.flash('error', 'Password must be at least 4 characters');
+        if (!new_password || new_password.length < 8) {
+            req.flash('error', 'Password must be at least 8 characters');
             return res.redirect('/users');
         }
         const hashed = bcrypt.hashSync(new_password, 8);

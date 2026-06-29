@@ -22,6 +22,7 @@ router.get('/', requireAuth, async (req, res) => {
         const totalItems = await get(`SELECT COUNT(*) as count FROM items`);
         const available = await get(`SELECT COUNT(*) as count FROM items WHERE status='available'`);
         const allocated = await get(`SELECT COUNT(*) as count FROM items WHERE status='allocated'`);
+        const fixedCount = await get(`SELECT COUNT(*) as count FROM items WHERE status='fixed'`);
         const maintenanceCount = await get(`SELECT COUNT(*) as count FROM items WHERE status='maintenance'`);
         const totalEmployees = await get(`SELECT COUNT(*) as count FROM employees`);
         const activeAllocations = await get(`SELECT COUNT(*) as count FROM allocations WHERE status='active'`);
@@ -44,6 +45,7 @@ router.get('/', requireAuth, async (req, res) => {
             totalItems: totalItems.count,
             available: available.count,
             allocated: allocated.count,
+            fixedCount: fixedCount.count,
             maintenanceCount: maintenanceCount.count,
             totalEmployees: totalEmployees.count,
             activeAllocations: activeAllocations.count,
@@ -69,7 +71,7 @@ router.get('/', requireAuth, async (req, res) => {
         req.flash('error', 'Failed to load dashboard');
         res.render('dashboard', {
             stats: {
-                totalItems: 0, available: 0, allocated: 0, maintenanceCount: 0,
+                totalItems: 0, available: 0, allocated: 0, fixedCount: 0, maintenanceCount: 0,
                 totalEmployees: 0, activeAllocations: 0, pendingMaintenance: 0,
                 totalValue: 0, underWarranty: 0
             },

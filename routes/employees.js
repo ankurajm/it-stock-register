@@ -49,11 +49,11 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/add', requireAuth, (req, res) => {
+router.get('/add', requireAuth, requireAdmin, (req, res) => {
     res.render('employees/add', { error: null, employee: null });
 });
 
-router.post('/add', requireAuth, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
+router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -97,7 +97,7 @@ router.get('/view/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/edit/:id', requireAuth, async (req, res) => {
+router.get('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const employee = await get(`SELECT * FROM employees WHERE id = ?`, [req.params.id]);
         if (!employee) {
@@ -112,7 +112,7 @@ router.get('/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.post('/edit/:id', requireAuth, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
+router.post('/edit/:id', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         await run(`UPDATE employees SET emp_id=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
@@ -152,7 +152,7 @@ router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
         for (const a of activeAllocs) {
             await run(`UPDATE items SET status='available' WHERE id=?`, [a.item_id]);
         }
-        await run(`UPDATE allocations SET status='returned', return_date=date('now') WHERE employee_id=? AND status='active'`, [req.params.id]);
+        await run(`UPDATE allocations SET status='returned', return_date=CURRENT_DATE WHERE employee_id=? AND status='active'`, [req.params.id]);
         await run(`DELETE FROM employees WHERE id=?`, [req.params.id]);
 
         req.flash('success', 'Employee ' + emp.name + ' deleted successfully');
