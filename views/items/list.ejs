@@ -4,10 +4,12 @@
         <h4 class="fw-bold mb-0"><i class="bi bi-laptop me-2"></i> IT Items</h4>
         <small class="text-muted"><%= totalItems %> item(s) found</small>
     </div>
-    <div class="d-flex gap-2">
-        <a href="/reports/items/pdf" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-        <a href="/reports/items/excel" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-excel"></i> Excel</a>
-        <a href="/bulk/items" class="btn btn-sm btn-outline-info"><i class="bi bi-upload"></i> Bulk Import</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/reports/items/pdf" class="btn btn-sm btn-outline-danger"><i class="bi bi-file-earmark-pdf"></i> All Assets PDF</a>
+        <a href="/reports/items/excel" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-excel"></i> All Assets Excel</a>
+        <a href="/reports/items/pdf?status=fixed" class="btn btn-sm btn-outline-info"><i class="bi bi-geo-alt"></i> Fixed Assets PDF</a>
+        <a href="/reports/items/excel?status=fixed" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Fixed Assets Excel</a>
+        <a href="/bulk/items" class="btn btn-sm btn-outline-secondary"><i class="bi bi-upload"></i> Bulk Import</a>
         <a href="/items/add" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Item</a>
         <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
         <form method="POST" action="/items/seed-fixed" style="display:inline" onsubmit="return confirm('Add sample fixed assets (Xerox, CCTV, Projector, etc.)?')">
