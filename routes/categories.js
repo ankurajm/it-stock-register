@@ -15,21 +15,21 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.get('/add', requireAuth, requireAdmin, (req, res) => {
-    res.render('categories/add', { error: null });
+    res.render('categories/add', { error: null, category: null });
 });
 
 router.post('/add', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { name, prefix, description } = req.body;
         if (!name || !prefix) {
-            return res.render('categories/add', { error: 'Name and prefix are required' });
+            return res.render('categories/add', { error: 'Name and prefix are required', category: null });
         }
         await run(`INSERT INTO categories (name, prefix, description) VALUES (?, ?, ?)`, [name, prefix.toUpperCase(), description]);
         req.flash('success', 'Category ' + name + ' added successfully');
         res.redirect('/categories');
     } catch (err) {
         const errorMsg = err.message.includes('UNIQUE') ? 'Category name already exists!' : 'Failed to add category';
-        res.render('categories/add', { error: errorMsg });
+        res.render('categories/add', { error: errorMsg, category: null });
     }
 });
 
