@@ -1,0 +1,56 @@
+<% title = 'Department-wise Reports' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-building me-2"></i> Department-wise Reports</h4>
+        <small class="text-muted"><%= departments.length %> department(s) found</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/reports/departments/pdf" class="btn btn-outline-danger" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Summary PDF</a>
+        <a href="/reports/departments/excel" class="btn btn-outline-success" target="_blank"><i class="bi bi-file-earmark-excel"></i> Summary Excel</a>
+    </div>
+</div>
+
+<div class="row">
+    <% if (departments.length === 0) { %>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-building fs-1"></i>
+                <p class="mt-2">No departments found. Add employees with department names first.</p>
+            </div>
+        </div>
+    </div>
+    <% } else { %>
+    <% departments.forEach(dept => { %>
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-top border-primary border-3">
+            <div class="card-body">
+                <h5 class="card-title fw-bold"><i class="bi bi-building me-2 text-primary"></i><%= dept.department %></h5>
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-primary"><%= dept.employee_count %></div>
+                        <small class="text-muted">Employees</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-success"><%= dept.active_allocations %></div>
+                        <small class="text-muted">Allocations</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-info"><%= dept.items_issued %></div>
+                        <small class="text-muted">Items</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white d-flex gap-2">
+                <a href="/reports/departments/<%= encodeURIComponent(dept.department) %>/pdf" class="btn btn-sm btn-outline-danger flex-fill" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+                <a href="/reports/departments/<%= encodeURIComponent(dept.department) %>/excel" class="btn btn-sm btn-outline-success flex-fill" target="_blank">
+                    <i class="bi bi-file-earmark-excel"></i> Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+    <% } %>
+</div>

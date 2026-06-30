@@ -85,6 +85,8 @@ app.use('/bulk', require('./routes/bulk'));
 app.use('/users', require('./routes/users'));
 app.use('/profile', require('./routes/profile'));
 app.use('/settings', require('./routes/settings'));
+app.use('/logs', require('./routes/logs'));
+app.use('/notifications', require('./routes/notifications'));
 
 app.use((req, res) => {
     res.status(404).render('error', { layout: false,
@@ -142,6 +144,18 @@ if (config.backupCron && process.env.DATABASE_URL) {
         }
     });
 }
+
+cron.schedule('0 8 * * *', async () => {
+    console.log('Running return reminder check...');
+    try {
+        const { checkOverdueAllocations, checkUpcomingReturns } = require('./utils/notifications');
+        const overdue = await checkOverdueAllocations();
+        const upcoming = await checkUpcomingReturns(7);
+        console.log(`Return reminders: ${overdue} overdue, ${upcoming} upcoming`);
+    } catch (err) {
+        console.error('Return reminder cron failed:', err.message);
+    }
+});
 
 const server = app.listen(PORT, HOST, () => {
     const localIP = getLocalIP();

@@ -40,7 +40,12 @@
                     <label class="form-label">Allocation Date <span class="text-danger">*</span></label>
                     <input type="date" name="allocated_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-4">
+                    <label class="form-label">Expected Return Date</label>
+                    <input type="date" name="expected_return_date" class="form-control">
+                    <div class="form-text">Optional. Used for return reminders.</div>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Remarks / Purpose</label>
                     <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for allocation, additional notes..."></textarea>
                 </div>

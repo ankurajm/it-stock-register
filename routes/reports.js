@@ -635,4 +635,114 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
     }
 });
 
+router.get('/departments', requireAuth, async (req, res) => {
+    try {
+        const departments = await all(`
+            SELECT 
+                e.department,
+                COUNT(DISTINCT e.id) as employee_count,
+                COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
+                COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued,
+                COUNT(DISTINCT CASE WHEN i.status='maintenance' THEN i.id END) as in_maintenance
+            FROM employees e
+            LEFT JOIN allocations a ON a.employee_id = e.id
+            LEFT JOIN items i ON a.item_id = i.id
+            WHERE e.department IS NOT NULL AND e.department != ''
+            GROUP BY e.department
+            ORDER BY e.department
+        `);
+        res.render('reports/department', { departments });
+    } catch (err) {
+        console.error('Department report error:', err.message);
+        req.flash('error', 'Failed to load department report');
+        res.redirect('/reports');
+    }
+});
+
+router.get('/departments/pdf', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT e.department,
+                   COUNT(DISTINCT e.id) as employee_count,
+                   COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
+                   COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued
+            FROM employees e
+            LEFT JOIN allocations a ON a.employee_id = e.id
+            LEFT JOIN items i ON a.item_id = i.id
+            WHERE e.department IS NOT NULL AND e.department != ''
+            GROUP BY e.department
+            ORDER BY e.department
+        `);
+        await generatePDF(data, ['department', 'employee_count', 'active_allocations', 'items_issued'], 'Department-wise Summary Report', res);
+    } catch (err) {
+        console.error('Department PDF error:', err.message);
+        req.flash('error', 'Failed to generate PDF');
+        res.redirect('/reports/departments');
+    }
+});
+
+router.get('/departments/excel', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT e.department,
+                   COUNT(DISTINCT e.id) as employee_count,
+                   COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
+                   COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued
+            FROM employees e
+            LEFT JOIN allocations a ON a.employee_id = e.id
+            LEFT JOIN items i ON a.item_id = i.id
+            WHERE e.department IS NOT NULL AND e.department != ''
+            GROUP BY e.department
+            ORDER BY e.department
+        `);
+        await generateExcel(data, ['department', 'employee_count', 'active_allocations', 'items_issued'], 'Department-wise Summary', res);
+    } catch (err) {
+        console.error('Department Excel error:', err.message);
+        req.flash('error', 'Failed to generate Excel');
+        res.redirect('/reports/departments');
+    }
+});
+
+router.get('/departments/:department/pdf', requireAuth, async (req, res) => {
+    try {
+        const dept = decodeURIComponent(req.params.department);
+        const data = await all(`
+            SELECT e.name as emp_name, e.emp_id, e.designation,
+                   i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   a.allocated_date, a.expected_return_date, a.status as alloc_status
+            FROM employees e
+            LEFT JOIN allocations a ON a.employee_id = e.id AND a.status = 'active'
+            LEFT JOIN items i ON a.item_id = i.id
+            WHERE e.department = ?
+            ORDER BY e.name, i.asset_tag
+        `, [dept]);
+        await generatePDF(data, ['emp_name', 'emp_id', 'designation', 'asset_tag', 'category', 'brand', 'model', 'allocated_date', 'alloc_status'], dept + ' Department - IT Assets Report', res);
+    } catch (err) {
+        console.error('Department detail PDF error:', err.message);
+        req.flash('error', 'Failed to generate PDF');
+        res.redirect('/reports/departments');
+    }
+});
+
+router.get('/departments/:department/excel', requireAuth, async (req, res) => {
+    try {
+        const dept = decodeURIComponent(req.params.department);
+        const data = await all(`
+            SELECT e.name as emp_name, e.emp_id, e.designation,
+                   i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   a.allocated_date, a.expected_return_date, a.status as alloc_status
+            FROM employees e
+            LEFT JOIN allocations a ON a.employee_id = e.id AND a.status = 'active'
+            LEFT JOIN items i ON a.item_id = i.id
+            WHERE e.department = ?
+            ORDER BY e.name, i.asset_tag
+        `, [dept]);
+        await generateExcel(data, ['emp_name', 'emp_id', 'designation', 'asset_tag', 'category', 'brand', 'model', 'serial_number', 'allocated_date', 'expected_return_date', 'alloc_status'], dept + ' Department - IT Assets', res);
+    } catch (err) {
+        console.error('Department detail Excel error:', err.message);
+        req.flash('error', 'Failed to generate Excel');
+        res.redirect('/reports/departments');
+    }
+});
+
 module.exports = router;

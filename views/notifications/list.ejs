@@ -1,0 +1,68 @@
+<% title = 'Notifications' %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-bell me-2"></i> Notifications</h4>
+        <small class="text-muted"><%= notifications.length %> notification(s)</small>
+    </div>
+</div>
+
+<% if (notifications.length === 0) { %>
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-bell-slash fs-1"></i>
+        <p class="mt-2">No notifications yet.</p>
+    </div>
+</div>
+<% } else { %>
+<div class="list-group">
+    <% notifications.forEach(notif => { %>
+    <div class="list-group-item list-group-item-action <%= notif.is_read ? '' : 'list-group-item-light' %>" id="notif-<%= notif.id %>">
+        <div class="d-flex w-100 justify-content-between align-items-start">
+            <div>
+                <% if (notif.notification_type === 'overdue') { %>
+                    <span class="badge bg-danger me-2"><i class="bi bi-exclamation-circle"></i> Overdue</span>
+                <% } else if (notif.notification_type === 'return_reminder') { %>
+                    <span class="badge bg-warning text-dark me-2"><i class="bi bi-clock"></i> Reminder</span>
+                <% } else { %>
+                    <span class="badge bg-info me-2"><i class="bi bi-info-circle"></i> Info</span>
+                <% } %>
+                <strong><%= notif.subject %></strong>
+                <% if (!notif.is_read) { %>
+                    <span class="badge bg-primary rounded-pill ms-1">New</span>
+                <% } %>
+            </div>
+            <small class="text-muted"><%= new Date(notif.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></small>
+        </div>
+        <p class="mb-1 mt-2 text-muted small"><%= notif.message %></p>
+        <% if (!notif.is_read) { %>
+        <button class="btn btn-sm btn-outline-primary mt-2" onclick="markRead(<%= notif.id %>)">Mark as Read</button>
+        <% } %>
+    </div>
+    <% }); %>
+</div>
+<% } %>
+
+<script>
+function markRead(id) {
+    fetch('/notifications/read/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const el = document.getElementById('notif-' + id);
+                el.classList.remove('list-group-item-light');
+                el.querySelector('.badge.bg-primary')?.remove();
+                el.querySelector('.btn')?.remove();
+                updateBadge();
+            }
+        });
+}
+function updateBadge() {
+    fetch('/notifications/unread-count').then(r => r.json()).then(d => {
+        const badge = document.getElementById('notifBadge');
+        if (badge) {
+            badge.textContent = d.count;
+            badge.style.display = d.count > 0 ? 'inline' : 'none';
+        }
+    });
+}
+</script>

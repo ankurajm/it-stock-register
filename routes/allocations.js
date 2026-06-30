@@ -54,7 +54,7 @@ router.get('/allocate', requireAuth, requireAdmin, async (req, res) => {
 
 router.post('/allocate', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const { item_id, employee_id, allocated_date, remarks } = req.body;
+        const { item_id, employee_id, allocated_date, expected_return_date, remarks } = req.body;
 
         const item = await get(`SELECT asset_tag FROM items WHERE id = ? AND status='available'`, [item_id]);
         if (!item) {
@@ -68,8 +68,8 @@ router.post('/allocate', requireAuth, requireAdmin, async (req, res) => {
             return res.redirect('/allocations/allocate');
         }
 
-        await run(`INSERT INTO allocations (item_id, employee_id, allocated_date, remarks, status) VALUES (?, ?, ?, ?, 'active')`,
-            [item_id, employee_id, allocated_date, remarks]);
+        await run(`INSERT INTO allocations (item_id, employee_id, allocated_date, expected_return_date, remarks, status) VALUES (?, ?, ?, ?, ?, 'active')`,
+            [item_id, employee_id, allocated_date, expected_return_date || null, remarks]);
         await run(`UPDATE items SET status='allocated' WHERE id=?`, [item_id]);
 
         req.flash('success', 'Item ' + item.asset_tag + ' allocated to ' + emp.name);

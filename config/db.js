@@ -136,7 +136,39 @@ async function migrate() {
         `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS academic_session TEXT DEFAULT ''`,
         `ALTER TABLE employees ADD COLUMN IF NOT EXISTS class_teacher TEXT DEFAULT ''`,
         `ALTER TABLE employees ADD COLUMN IF NOT EXISTS subject_teacher TEXT DEFAULT ''`,
-        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS school_logo_data TEXT DEFAULT ''`
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS school_logo_data TEXT DEFAULT ''`,
+        `CREATE TABLE IF NOT EXISTS login_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER,
+            username TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            ip_address TEXT DEFAULT '',
+            user_agent TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_login_logs_user_id ON login_logs(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_login_logs_created_at ON login_logs(created_at)`,
+        `CREATE INDEX IF NOT EXISTS idx_login_logs_event_type ON login_logs(event_type)`,
+        `ALTER TABLE allocations ADD COLUMN IF NOT EXISTS expected_return_date DATE`,
+        `CREATE TABLE IF NOT EXISTS notifications (
+            id SERIAL PRIMARY KEY,
+            allocation_id INTEGER REFERENCES allocations(id) ON DELETE SET NULL,
+            employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+            notification_type TEXT NOT NULL,
+            channel TEXT NOT NULL DEFAULT 'in_app',
+            subject TEXT DEFAULT '',
+            message TEXT DEFAULT '',
+            is_read INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_host TEXT DEFAULT ''`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_port INTEGER DEFAULT 587`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_user TEXT DEFAULT ''`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_pass TEXT DEFAULT ''`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_from TEXT DEFAULT ''`,
+        `ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS return_reminder_days INTEGER DEFAULT 7`
     ];
     for (const sql of migrations) {
         try { await getDB().query(sql); } catch (e) { /* ignore */ }

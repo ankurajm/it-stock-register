@@ -33,6 +33,30 @@ router.get('/', requireAuth, async (req, res) => {
 
         const expiringWarranty = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND warranty_end != '' AND date(warranty_end) BETWEEN date('now') AND date('now', '+30 days') ORDER BY warranty_end ASC`);
 
+        const overdueAllocations = await all(`
+            SELECT a.*, e.name as emp_name, e.email, e.department, i.asset_tag, i.category, i.brand
+            FROM allocations a
+            JOIN employees e ON a.employee_id = e.id
+            JOIN items i ON a.item_id = i.id
+            WHERE a.status = 'active'
+              AND a.expected_return_date IS NOT NULL
+              AND a.expected_return_date != ''
+              AND a.expected_return_date < CURRENT_DATE
+            ORDER BY a.expected_return_date ASC
+        `);
+
+        const upcomingReturns = await all(`
+            SELECT a.*, e.name as emp_name, e.email, e.department, i.asset_tag, i.category, i.brand
+            FROM allocations a
+            JOIN employees e ON a.employee_id = e.id
+            JOIN items i ON a.item_id = i.id
+            WHERE a.status = 'active'
+              AND a.expected_return_date IS NOT NULL
+              AND a.expected_return_date != ''
+              AND a.expected_return_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
+            ORDER BY a.expected_return_date ASC
+        `);
+
         const recentItems = await all(`SELECT * FROM items ORDER BY created_at DESC LIMIT 5`);
 
         const recentAllocations = await all(`SELECT a.*, i.asset_tag, e.name as emp_name FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN employees e ON a.employee_id = e.id ORDER BY a.allocated_date DESC LIMIT 5`);
@@ -57,6 +81,8 @@ router.get('/', requireAuth, async (req, res) => {
         res.render('dashboard', {
             stats,
             expiringWarranty,
+            overdueAllocations,
+            upcomingReturns,
             recentItems,
             recentAllocations,
             categoryStats,
@@ -75,7 +101,8 @@ router.get('/', requireAuth, async (req, res) => {
                 totalEmployees: 0, activeAllocations: 0, pendingMaintenance: 0,
                 totalValue: 0, underWarranty: 0
             },
-            expiringWarranty: [], recentItems: [], recentAllocations: [],
+            expiringWarranty: [], overdueAllocations: [], upcomingReturns: [],
+            recentItems: [], recentAllocations: [],
             categoryStats: [], pendingRequests: 0, schoolName: config.schoolName
         });
     }
