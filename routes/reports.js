@@ -745,4 +745,113 @@ router.get('/departments/:department/excel', requireAuth, async (req, res) => {
     }
 });
 
+router.get('/locations', requireAuth, async (req, res) => {
+    try {
+        const locations = await all(`
+            SELECT 
+                i.location,
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN i.status='available' THEN 1 END) as available,
+                COUNT(CASE WHEN i.status='allocated' THEN 1 END) as allocated,
+                COUNT(CASE WHEN i.status='fixed' THEN 1 END) as fixed_count,
+                COUNT(CASE WHEN i.status='maintenance' THEN 1 END) as in_maintenance
+            FROM items i
+            WHERE i.location IS NOT NULL AND i.location != ''
+            GROUP BY i.location
+            ORDER BY i.location
+        `);
+        res.render('reports/location', { locations });
+    } catch (err) {
+        console.error('Location report error:', err.message);
+        req.flash('error', 'Failed to load location report');
+        res.redirect('/reports');
+    }
+});
+
+router.get('/locations/pdf', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT i.location,
+                   COUNT(*) as total_items,
+                   COUNT(CASE WHEN i.status='available' THEN 1 END) as available,
+                   COUNT(CASE WHEN i.status='allocated' THEN 1 END) as allocated,
+                   COUNT(CASE WHEN i.status='fixed' THEN 1 END) as fixed_count
+            FROM items i
+            WHERE i.location IS NOT NULL AND i.location != ''
+            GROUP BY i.location
+            ORDER BY i.location
+        `);
+        await generatePDF(data, ['location', 'total_items', 'available', 'allocated', 'fixed_count'], 'Location-wise Summary Report', res);
+    } catch (err) {
+        console.error('Location PDF error:', err.message);
+        req.flash('error', 'Failed to generate PDF');
+        res.redirect('/reports/locations');
+    }
+});
+
+router.get('/locations/excel', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT i.location,
+                   COUNT(*) as total_items,
+                   COUNT(CASE WHEN i.status='available' THEN 1 END) as available,
+                   COUNT(CASE WHEN i.status='allocated' THEN 1 END) as allocated,
+                   COUNT(CASE WHEN i.status='fixed' THEN 1 END) as fixed_count
+            FROM items i
+            WHERE i.location IS NOT NULL AND i.location != ''
+            GROUP BY i.location
+            ORDER BY i.location
+        `);
+        await generateExcel(data, ['location', 'total_items', 'available', 'allocated', 'fixed_count'], 'Location-wise Summary', res);
+    } catch (err) {
+        console.error('Location Excel error:', err.message);
+        req.flash('error', 'Failed to generate Excel');
+        res.redirect('/reports/locations');
+    }
+});
+
+router.get('/locations/:location/pdf', requireAuth, async (req, res) => {
+    try {
+        const loc = decodeURIComponent(req.params.location);
+        const data = await all(`
+            SELECT i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.status, i.condition, i.purchase_date, i.warranty_end,
+                   CASE WHEN a.status='active' THEN e.name ELSE NULL END as allocated_to,
+                   CASE WHEN a.status='active' THEN a.allocated_date ELSE NULL END as allocated_date
+            FROM items i
+            LEFT JOIN allocations a ON a.item_id = i.id AND a.status = 'active'
+            LEFT JOIN employees e ON a.employee_id = e.id
+            WHERE i.location = ?
+            ORDER BY i.asset_tag
+        `, [loc]);
+        await generatePDF(data, ['asset_tag', 'category', 'brand', 'model', 'status', 'condition', 'allocated_to', 'allocated_date'], loc + ' - IT Assets Report', res);
+    } catch (err) {
+        console.error('Location detail PDF error:', err.message);
+        req.flash('error', 'Failed to generate PDF');
+        res.redirect('/reports/locations');
+    }
+});
+
+router.get('/locations/:location/excel', requireAuth, async (req, res) => {
+    try {
+        const loc = decodeURIComponent(req.params.location);
+        const data = await all(`
+            SELECT i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.status, i.condition, i.purchase_date, i.warranty_end,
+                   CASE WHEN a.status='active' THEN e.name ELSE NULL END as allocated_to,
+                   CASE WHEN a.status='active' THEN a.allocated_date ELSE NULL END as allocated_date
+            FROM items i
+            LEFT JOIN allocations a ON a.item_id = i.id AND a.status = 'active'
+            LEFT JOIN employees e ON a.employee_id = e.id
+            WHERE i.location = ?
+            ORDER BY i.asset_tag
+        `, [loc]);
+        await generateExcel(data, ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'status', 'condition', 'purchase_date', 'warranty_end', 'allocated_to', 'allocated_date'], loc + ' - IT Assets', res);
+    } catch (err) {
+        console.error('Location detail Excel error:', err.message);
+        req.flash('error', 'Failed to generate Excel');
+        res.redirect('/reports/locations');
+    }
+});
+
 module.exports = router;
