@@ -21,23 +21,31 @@ router.post('/login', require('express-rate-limit')({
     }
 }), async (req, res) => {
     const { username, password } = req.body;
-    console.log('Login attempt:', username);
+    console.log('[USER LOGIN] Attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
-        console.log('User found:', user ? 'yes' : 'no');
-        if (!user || !bcrypt.compareSync(password, user.password)) {
-            console.log('Invalid credentials');
+        console.log('[USER LOGIN] User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
+        if (!user) {
+            console.log('[USER LOGIN] No user found');
             req.flash('error', 'Invalid username or password');
             logEvent(null, username || '', 'login_failed', req).catch(() => {});
             return res.redirect('/login');
         }
-        console.log('Credentials valid, regenerating session');
+        const pwMatch = bcrypt.compareSync(password, user.password);
+        console.log('[USER LOGIN] Password match:', pwMatch);
+        if (!pwMatch) {
+            req.flash('error', 'Invalid username or password');
+            logEvent(null, username || '', 'login_failed', req).catch(() => {});
+            return res.redirect('/login');
+        }
+        console.log('[USER LOGIN] Credentials OK, calling session.regenerate');
         req.session.regenerate((err) => {
             if (err) {
-                console.error('Session regenerate error:', err.message);
-                req.flash('error', 'Login failed. Please try again.');
+                console.error('[USER LOGIN] Session regenerate FAILED:', err.message, err.stack);
+                req.flash('error', 'Session error. Please try again.');
                 return res.redirect('/login');
             }
+            console.log('[USER LOGIN] Session regenerated OK, setting user');
             req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
             req.session.csrfToken = crypto.randomBytes(32).toString('hex');
             req.flash('success', 'Welcome back, ' + user.username + '!');
@@ -45,8 +53,8 @@ router.post('/login', require('express-rate-limit')({
             res.redirect('/');
         });
     } catch (err) {
-        console.error('Login error:', err.message, err.stack);
-        req.flash('error', 'Login failed. Please try again.');
+        console.error('[USER LOGIN] CATCH ERROR:', err.message, err.stack);
+        req.flash('error', 'Login failed: ' + err.message);
         res.redirect('/login');
     }
 });
@@ -66,29 +74,31 @@ router.post('/login/admin', require('express-rate-limit')({
     }
 }), async (req, res) => {
     const { username, password } = req.body;
-    console.log('Admin login attempt:', username);
+    console.log('[ADMIN LOGIN] Attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
-        console.log('User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
+        console.log('[ADMIN LOGIN] User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
         if (!user || user.role !== 'admin') {
-            console.log('Admin access denied - not admin or not found');
+            console.log('[ADMIN LOGIN] Not admin or not found');
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
-        const passwordMatch = bcrypt.compareSync(password, user.password);
-        console.log('Password match:', passwordMatch);
-        if (!passwordMatch) {
+        const pwMatch = bcrypt.compareSync(password, user.password);
+        console.log('[ADMIN LOGIN] Password match:', pwMatch);
+        if (!pwMatch) {
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
+        console.log('[ADMIN LOGIN] Credentials OK, calling session.regenerate');
         req.session.regenerate((err) => {
             if (err) {
-                console.error('Session regenerate error:', err.message);
-                req.flash('error', 'Login failed. Please try again.');
+                console.error('[ADMIN LOGIN] Session regenerate FAILED:', err.message, err.stack);
+                req.flash('error', 'Session error. Please try again.');
                 return res.redirect('/login/admin');
             }
+            console.log('[ADMIN LOGIN] Session regenerated OK');
             req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
             req.session.csrfToken = crypto.randomBytes(32).toString('hex');
             req.flash('success', 'Welcome back, ' + user.username + '!');
@@ -96,8 +106,8 @@ router.post('/login/admin', require('express-rate-limit')({
             res.redirect('/');
         });
     } catch (err) {
-        console.error('Admin login error:', err.message);
-        req.flash('error', 'Login failed. Please try again.');
+        console.error('[ADMIN LOGIN] CATCH ERROR:', err.message, err.stack);
+        req.flash('error', 'Login failed: ' + err.message);
         res.redirect('/login/admin');
     }
 });

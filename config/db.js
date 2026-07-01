@@ -11,10 +11,7 @@ function getDB() {
     if (!pool) {
         const { Pool } = require('pg');
         const connectionString = process.env.DATABASE_URL || `postgresql://localhost:5432/it_stock`;
-        const sslConfig = process.env.NODE_ENV === 'production'
-            ? { rejectUnauthorized: true }
-            : { rejectUnauthorized: false };
-        pool = new Pool({ connectionString, max: 10, ssl: sslConfig });
+        pool = new Pool({ connectionString, max: 10, ssl: { rejectUnauthorized: false } });
         console.log('PostgreSQL pool created');
     }
     return pool;
