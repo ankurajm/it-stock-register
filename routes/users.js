@@ -26,7 +26,7 @@ router.post('/add', requireAuth, requireAdmin, async (req, res) => {
         if (!username || !password) {
             return res.render('users/add', { error: 'Username and password are required' });
         }
-        const hashed = bcrypt.hashSync(password, 8);
+        const hashed = bcrypt.hashSync(password, 12);
         const roleInitial = getRoleInitial(null, role);
         const finalInitials = roleInitial || initials || '';
         if (roleInitial) {
@@ -79,7 +79,7 @@ router.post('/reset-password/:id', requireAuth, requireAdmin, async (req, res) =
             req.flash('error', 'Password must be at least 8 characters');
             return res.redirect('/users');
         }
-        const hashed = bcrypt.hashSync(new_password, 8);
+        const hashed = bcrypt.hashSync(new_password, 12);
         await run(`UPDATE users SET password=?, password_change_requested=0 WHERE id=?`, [hashed, req.params.id]);
         req.flash('success', 'Password reset successfully');
         res.redirect('/users');

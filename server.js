@@ -17,9 +17,30 @@ const PORT = config.port;
 const HOST = process.env.HOST || '127.0.0.1';
 
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com"],
+            fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"]
+        }
+    },
     crossOriginEmbedderPolicy: false
 }));
+
+const rateLimit = require('express-rate-limit');
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    message: 'Too many requests. Please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(globalLimiter);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -28,7 +49,10 @@ app.set('trust proxy', 1);
 app.use(layouts);
 
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', (req, res, next) => {
+    if (req.session && req.session.user) return next();
+    return res.status(403).send('Access denied');
+}, express.static('uploads'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -98,8 +122,8 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
     console.error('Server Error:', err.stack || err.message);
     res.status(err.status || 500).render('error', { layout: false,
-        message: err.message || 'Something went wrong',
-        error: process.env.NODE_ENV === 'development' ? err : {}
+        message: 'Something went wrong. Please try again.',
+        error: {}
     });
 });
 
@@ -134,10 +158,10 @@ if (config.backupCron && process.env.DATABASE_URL) {
     cron.schedule(config.backupCron, async () => {
         console.log('Running scheduled backup...');
         try {
-            const { execSync } = require('child_process');
+            const { execFileSync } = require('child_process');
             const ts = new Date().toISOString().replace(/[:.]/g, '-');
             const file = path.join(config.backupDir, `backup-${ts}.sql`);
-            execSync(`pg_dump "${process.env.DATABASE_URL}" > "${file}"`, { stdio: 'ignore' });
+            execFileSync('pg_dump', [process.env.DATABASE_URL], { stdio: ['ignore', require('fs').openSync(file, 'w'), 'ignore'] });
             console.log('Backup saved:', file);
         } catch (err) {
             console.error('Scheduled backup failed:', err.message);

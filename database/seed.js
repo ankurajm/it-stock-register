@@ -5,7 +5,7 @@ const { run, initSchema } = require('../config/db');
 (async () => {
     try {
         await initSchema();
-        const hashedPassword = bcrypt.hashSync('admin123', 8);
+        const hashedPassword = bcrypt.hashSync('admin123', 12);
         await run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?) ON CONFLICT (username) DO NOTHING`,
             ['admin', hashedPassword, 'admin']);
         console.log('Default admin user created (admin / admin123)');

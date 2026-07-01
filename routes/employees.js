@@ -63,7 +63,7 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
         if (!existingUser) {
             const initials = await generateInitialsForEmployee(name, designation, 'user');
             const password = generatePassword();
-            const hashed = bcrypt.hashSync(password, 8);
+            const hashed = bcrypt.hashSync(password, 12);
             await run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`,
                 [emp_id, hashed, initials, 'user']);
             req.flash('success', `Employee ${name} added. Username: ${emp_id}, Password: ${password}, Initials: ${initials}`);

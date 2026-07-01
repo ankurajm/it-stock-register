@@ -340,7 +340,7 @@ router.post('/employees', requireAuth, requireAdmin, upload.single('file'), vali
                     if (!existingUser) {
                         const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
                         const password = generatePassword();
-                        const hashed = bcrypt.hashSync(password, 8);
+const hashed = bcrypt.hashSync(password, 12);
                         await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [emp_id, hashed, initials, 'user']);
                         results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
                     } else {

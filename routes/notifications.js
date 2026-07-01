@@ -19,10 +19,14 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/read/:id', requireAuth, async (req, res) => {
     try {
+        const employee = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
+        if (!employee) return res.status(403).json({ error: 'Not authorized' });
+        const notif = await get(`SELECT id FROM notifications WHERE id = ? AND employee_id = ?`, [req.params.id, employee.id]);
+        if (!notif) return res.status(404).json({ error: 'Notification not found' });
         await markAsRead(req.params.id);
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to mark notification' });
     }
 });
 

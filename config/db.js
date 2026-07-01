@@ -11,7 +11,10 @@ function getDB() {
     if (!pool) {
         const { Pool } = require('pg');
         const connectionString = process.env.DATABASE_URL || `postgresql://localhost:5432/it_stock`;
-        pool = new Pool({ connectionString, max: 10, ssl: { rejectUnauthorized: false } });
+        const sslConfig = process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: true }
+            : { rejectUnauthorized: false };
+        pool = new Pool({ connectionString, max: 10, ssl: sslConfig });
         console.log('PostgreSQL pool created');
     }
     return pool;
@@ -96,7 +99,7 @@ async function initSchema() {
 
     const existingAdmin = await get(`SELECT id FROM users WHERE username = $1`, ['admin']);
     if (!existingAdmin) {
-        const hashedPassword = bcrypt.hashSync('admin123', 8);
+        const hashedPassword = bcrypt.hashSync('admin123', 12);
         await run(`INSERT INTO users (username, password, role, initials) VALUES ($1, $2, $3, $4)`, ['admin', hashedPassword, 'admin', 'ADM']);
         console.log('Default admin user created (admin / admin123)');
     } else {
@@ -105,7 +108,7 @@ async function initSchema() {
 
     const existingUser = await get(`SELECT id FROM users WHERE username = $1`, ['user']);
     if (!existingUser) {
-        const hashedPassword = bcrypt.hashSync('user123', 8);
+        const hashedPassword = bcrypt.hashSync('user123', 12);
         await run(`INSERT INTO users (username, password, role, initials) VALUES ($1, $2, $3, $4)`, ['user', hashedPassword, 'user', 'USR']);
         console.log('Default user created (user / user123)');
     }

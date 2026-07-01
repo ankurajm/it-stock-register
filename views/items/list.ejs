@@ -112,7 +112,7 @@
                         <div class="btn-group btn-group-sm">
                             <a href="/items/view/<%= item.id %>" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
                             <a href="/items/edit/<%= item.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form method="POST" action="/items/delete/<%= item.id %>" style="display:inline" onsubmit="return confirm('Delete item <%= item.asset_tag %>?')">
+                            <form method="POST" action="/items/delete/<%= item.id %>" style="display:inline" onsubmit="return confirm('Delete this item?')">
                                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                             </form>

@@ -70,7 +70,7 @@
                         <div class="btn-group btn-group-sm">
                             <a href="/employees/view/<%= emp.id %>" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
                             <a href="/employees/edit/<%= emp.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                            <form method="POST" action="/employees/delete/<%= emp.id %>" style="display:inline" onsubmit="return confirm('Delete <%= emp.name %>? Their allocations will be closed.')">
+                            <form method="POST" action="/employees/delete/<%= emp.id %>" style="display:inline" onsubmit="return confirm('Delete this employee? Their allocations will be closed.')">
                                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                             </form>

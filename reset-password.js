@@ -39,7 +39,7 @@ if (newPassword.length < 4) {
             process.exit(1);
         }
 
-        const hashed = bcrypt.hashSync(newPassword, 8);
+        const hashed = bcrypt.hashSync(newPassword, 12);
         const { run } = require('./config/db');
         await run(`UPDATE users SET password = ?, password_change_requested = 0 WHERE id = ?`, [hashed, user.id]);
 

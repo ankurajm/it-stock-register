@@ -125,7 +125,7 @@ router.post('/change-password', requireAuth, require('express-rate-limit')({
         if (new_password !== confirm_password) {
             return res.render('change-password', { layout: false, error: 'Passwords do not match' });
         }
-        const hashed = bcrypt.hashSync(new_password, 8);
+        const hashed = bcrypt.hashSync(new_password, 12);
         await run(`UPDATE users SET password=? WHERE id=?`, [hashed, req.session.user.id]);
         await logEvent(req.session.user.id, req.session.user.username, 'password_change', req);
         req.flash('success', 'Password changed successfully');
