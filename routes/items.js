@@ -227,6 +227,32 @@ router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
+router.post('/bulk-delete', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { item_ids } = req.body;
+        if (!item_ids || !Array.isArray(item_ids) || item_ids.length === 0) {
+            req.flash('error', 'No items selected');
+            return res.redirect('/items');
+        }
+        let deleted = 0;
+        for (const id of item_ids) {
+            const item = await get(`SELECT asset_tag FROM items WHERE id = ?`, [id]);
+            if (item) {
+                await run(`DELETE FROM allocations WHERE item_id = ?`, [id]);
+                await run(`DELETE FROM maintenance WHERE item_id = ?`, [id]);
+                await run(`DELETE FROM items WHERE id = ?`, [id]);
+                deleted++;
+            }
+        }
+        req.flash('success', deleted + ' item(s) deleted successfully');
+        res.redirect('/items');
+    } catch (err) {
+        console.error('Bulk delete items error:', err.message);
+        req.flash('error', 'Failed to delete items');
+        res.redirect('/items');
+    }
+});
+
 router.get('/bulk-clone', requireAuth, async (req, res) => {
     try {
         const categories = await all(`SELECT * FROM categories ORDER BY name`);

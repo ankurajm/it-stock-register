@@ -113,4 +113,29 @@ router.post('/delete/:id', requireAuth, requireAdmin, require('express-rate-limi
     }
 });
 
+router.post('/bulk-delete', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { user_ids } = req.body;
+        if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+            req.flash('error', 'No users selected');
+            return res.redirect('/users');
+        }
+        let deleted = 0;
+        for (const id of user_ids) {
+            if (parseInt(id) === req.session.user.id) continue;
+            const user = await get(`SELECT username FROM users WHERE id = ?`, [id]);
+            if (user) {
+                await run(`DELETE FROM users WHERE id=?`, [id]);
+                deleted++;
+            }
+        }
+        req.flash('success', deleted + ' user(s) deleted successfully');
+        res.redirect('/users');
+    } catch (err) {
+        console.error('Bulk delete users error:', err.message);
+        req.flash('error', 'Failed to delete users');
+        res.redirect('/users');
+    }
+});
+
 module.exports = router;
