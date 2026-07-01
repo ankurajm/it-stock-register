@@ -56,8 +56,9 @@ router.get('/add', requireAuth, requireAdmin, (req, res) => {
 router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
+        const joiningDateVal = joining_date || null;
         await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [emp_id, name, department, designation, email, phone, joining_date, status || 'active', class_teacher || '', subject_teacher || '']);
+            [emp_id, name, department, designation, email, phone, joiningDateVal, status || 'active', class_teacher || '', subject_teacher || '']);
 
         const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
         if (!existingUser) {
@@ -115,8 +116,9 @@ router.get('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
 router.post('/edit/:id', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
+        const joiningDateVal = joining_date || null;
         await run(`UPDATE employees SET emp_id=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
-            [emp_id, name, department, designation, email, phone, joining_date, status, class_teacher || '', subject_teacher || '', req.params.id]);
+            [emp_id, name, department, designation, email, phone, joiningDateVal, status, class_teacher || '', subject_teacher || '', req.params.id]);
 
         const user = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
         if (user) {

@@ -273,7 +273,7 @@ router.get('/maintenance/excel', requireAuth, async (req, res) => {
 
 router.get('/warranty/pdf', requireAuth, async (req, res) => {
     try {
-        const items = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND warranty_end != '' AND date(warranty_end) BETWEEN date('now') AND date('now', '+30 days') ORDER BY warranty_end`);
+        const items = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' ORDER BY warranty_end`);
         const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'purchase_date', 'warranty_end', 'vendor'];
         await generatePDF(items, columns, 'Warranty Expiring Report', res);
     } catch (err) {
@@ -284,7 +284,7 @@ router.get('/warranty/pdf', requireAuth, async (req, res) => {
 
 router.get('/warranty/excel', requireAuth, async (req, res) => {
     try {
-        const items = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND warranty_end != '' AND date(warranty_end) BETWEEN date('now') AND date('now', '+30 days') ORDER BY warranty_end`);
+        const items = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' ORDER BY warranty_end`);
         const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'purchase_date', 'warranty_end', 'vendor'];
         await generateExcel(items, columns, 'Warranty Expiring', res);
     } catch (err) {

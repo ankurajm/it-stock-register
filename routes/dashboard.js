@@ -29,9 +29,9 @@ router.get('/', requireAuth, async (req, res) => {
         const pendingMaintenance = await get(`SELECT COUNT(*) as count FROM maintenance WHERE status='pending'`);
 
         const totalValue = await get(`SELECT COALESCE(SUM(purchase_price), 0) as value FROM items WHERE purchase_price IS NOT NULL`);
-        const underWarranty = await get(`SELECT COUNT(*) as count FROM items WHERE warranty_end IS NOT NULL AND warranty_end != '' AND date(warranty_end) >= date('now')`);
+        const underWarranty = await get(`SELECT COUNT(*) as count FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) >= CURRENT_DATE`);
 
-        const expiringWarranty = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND warranty_end != '' AND date(warranty_end) BETWEEN date('now') AND date('now', '+30 days') ORDER BY warranty_end ASC`);
+        const expiringWarranty = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' ORDER BY warranty_end ASC`);
 
         const overdueAllocations = await all(`
             SELECT a.*, e.name as emp_name, e.email, e.department, i.asset_tag, i.category, i.brand
@@ -40,7 +40,6 @@ router.get('/', requireAuth, async (req, res) => {
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL
-              AND a.expected_return_date != ''
               AND a.expected_return_date < CURRENT_DATE
             ORDER BY a.expected_return_date ASC
         `);
@@ -52,7 +51,6 @@ router.get('/', requireAuth, async (req, res) => {
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL
-              AND a.expected_return_date != ''
               AND a.expected_return_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
             ORDER BY a.expected_return_date ASC
         `);

@@ -10,7 +10,6 @@ async function checkOverdueAllocations() {
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL
-              AND a.expected_return_date != ''
               AND a.expected_return_date < CURRENT_DATE
         `);
 
@@ -64,7 +63,6 @@ async function checkUpcomingReturns(days = 7) {
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL
-              AND a.expected_return_date != ''
               AND a.expected_return_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '1 day' * $1
         `, [days]);
 
