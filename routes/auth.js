@@ -45,7 +45,7 @@ router.post('/login', require('express-rate-limit')({
             res.redirect('/');
         });
     } catch (err) {
-        console.error('Login error:', err.message);
+        console.error('Login error:', err.message, err.stack);
         req.flash('error', 'Login failed. Please try again.');
         res.redirect('/login');
     }
