@@ -17,18 +17,7 @@ const PORT = config.port;
 const HOST = process.env.HOST || '127.0.0.1';
 
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
-            styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com"],
-            fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            frameAncestors: ["'none'"]
-        }
-    },
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
 }));
 

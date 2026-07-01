@@ -21,15 +21,20 @@ router.post('/login', require('express-rate-limit')({
     }
 }), async (req, res) => {
     const { username, password } = req.body;
+    console.log('Login attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
+        console.log('User found:', user ? 'yes' : 'no');
         if (!user || !bcrypt.compareSync(password, user.password)) {
+            console.log('Invalid credentials');
             req.flash('error', 'Invalid username or password');
             logEvent(null, username || '', 'login_failed', req).catch(() => {});
             return res.redirect('/login');
         }
+        console.log('Credentials valid, regenerating session');
         req.session.regenerate((err) => {
             if (err) {
+                console.error('Session regenerate error:', err.message);
                 req.flash('error', 'Login failed. Please try again.');
                 return res.redirect('/login');
             }
@@ -61,20 +66,26 @@ router.post('/login/admin', require('express-rate-limit')({
     }
 }), async (req, res) => {
     const { username, password } = req.body;
+    console.log('Admin login attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
+        console.log('User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
         if (!user || user.role !== 'admin') {
+            console.log('Admin access denied - not admin or not found');
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
-        if (!bcrypt.compareSync(password, user.password)) {
+        const passwordMatch = bcrypt.compareSync(password, user.password);
+        console.log('Password match:', passwordMatch);
+        if (!passwordMatch) {
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
         req.session.regenerate((err) => {
             if (err) {
+                console.error('Session regenerate error:', err.message);
                 req.flash('error', 'Login failed. Please try again.');
                 return res.redirect('/login/admin');
             }
