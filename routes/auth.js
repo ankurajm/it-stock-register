@@ -25,7 +25,7 @@ router.post('/login', require('express-rate-limit')({
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
         if (!user || !bcrypt.compareSync(password, user.password)) {
             req.flash('error', 'Invalid username or password');
-            await logEvent(null, username || '', 'login_failed', req);
+            logEvent(null, username || '', 'login_failed', req).catch(() => {});
             return res.redirect('/login');
         }
         req.session.regenerate((err) => {
@@ -36,7 +36,7 @@ router.post('/login', require('express-rate-limit')({
             req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
             req.session.csrfToken = crypto.randomBytes(32).toString('hex');
             req.flash('success', 'Welcome back, ' + user.username + '!');
-            logEvent(user.id, user.username, 'login_success', req);
+            logEvent(user.id, user.username, 'login_success', req).catch(() => {});
             res.redirect('/');
         });
     } catch (err) {
@@ -65,12 +65,12 @@ router.post('/login/admin', require('express-rate-limit')({
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
         if (!user || user.role !== 'admin') {
             req.flash('error', 'Admin access denied. Invalid credentials.');
-            await logEvent(null, username || '', 'admin_login_failed', req);
+            logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
         if (!bcrypt.compareSync(password, user.password)) {
             req.flash('error', 'Admin access denied. Invalid credentials.');
-            await logEvent(null, username || '', 'admin_login_failed', req);
+            logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
         req.session.regenerate((err) => {
@@ -81,7 +81,7 @@ router.post('/login/admin', require('express-rate-limit')({
             req.session.user = { id: user.id, username: user.username, role: user.role, initials: user.initials || '' };
             req.session.csrfToken = crypto.randomBytes(32).toString('hex');
             req.flash('success', 'Welcome back, ' + user.username + '!');
-            logEvent(user.id, user.username, 'admin_login_success', req);
+            logEvent(user.id, user.username, 'admin_login_success', req).catch(() => {});
             res.redirect('/');
         });
     } catch (err) {
@@ -127,7 +127,7 @@ router.post('/change-password', requireAuth, require('express-rate-limit')({
         }
         const hashed = bcrypt.hashSync(new_password, 12);
         await run(`UPDATE users SET password=? WHERE id=?`, [hashed, req.session.user.id]);
-        await logEvent(req.session.user.id, req.session.user.username, 'password_change', req);
+        logEvent(req.session.user.id, req.session.user.username, 'password_change', req).catch(() => {});
         req.flash('success', 'Password changed successfully');
         res.redirect('/');
     } catch (err) {
