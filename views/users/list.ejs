@@ -40,10 +40,7 @@
                             <div class="btn-group btn-group-sm">
                                 <a href="/users/edit/<%= u.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
                                 <button type="button" class="btn btn-outline-info" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetModal<%= u.id %>"><i class="bi bi-key"></i></button>
-                                <form method="POST" action="/users/delete/<%= u.id %>" style="display:inline" onsubmit="return confirm('Delete this user?')">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                                </form>
+                                <button type="button" class="btn btn-outline-danger" title="Delete" onclick="deleteUser(<%= u.id %>, '<%= u.username %>')"><i class="bi bi-trash"></i></button>
                             </div>
 
                             <div class="modal fade" id="resetModal<%= u.id %>" tabindex="-1">
@@ -71,7 +68,7 @@
             </table>
         </div>
         <div id="bulkActions" class="card-footer d-none">
-            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete selected users?')">
+            <button type="submit" class="btn btn-danger btn-sm">
                 <i class="bi bi-trash"></i> Delete Selected (<span id="selectedCount">0</span>)
             </button>
         </div>
@@ -90,5 +87,20 @@ function updateBulkActions() {
     const count = document.querySelectorAll('.user-checkbox:checked').length;
     document.getElementById('selectedCount').textContent = count;
     document.getElementById('bulkActions').classList.toggle('d-none', count === 0);
+}
+document.getElementById('bulkDeleteForm').addEventListener('submit', function(e) {
+    if (!confirm('Delete selected users?')) e.preventDefault();
+});
+function deleteUser(id, name) {
+    if (confirm('Delete user "' + name + '"?')) {
+        var f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '/users/delete/' + id;
+        var cs = document.createElement('input');
+        cs.type = 'hidden'; cs.name = '_csrf'; cs.value = '<%= csrfToken %>';
+        f.appendChild(cs);
+        document.body.appendChild(f);
+        f.submit();
+    }
 }
 </script>

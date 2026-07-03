@@ -116,10 +116,7 @@
                             <div class="btn-group btn-group-sm">
                                 <a href="/items/view/<%= item.id %>" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
                                 <a href="/items/edit/<%= item.id %>" class="btn btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                                <form method="POST" action="/items/delete/<%= item.id %>" style="display:inline" onsubmit="return confirm('Delete this item?')">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button type="submit" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                                </form>
+                                <button type="button" class="btn btn-outline-danger" title="Delete" onclick="deleteItem(<%= item.id %>, '<%= item.asset_tag %>')"><i class="bi bi-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -168,5 +165,20 @@ function updateBulkActions() {
     const count = document.querySelectorAll('.item-checkbox:checked').length;
     document.getElementById('selectedCount').textContent = count;
     document.getElementById('bulkActions').classList.toggle('d-none', count === 0);
+}
+document.getElementById('bulkDeleteForm').addEventListener('submit', function(e) {
+    if (!confirm('Delete selected items?')) e.preventDefault();
+});
+function deleteItem(id, tag) {
+    if (confirm('Delete item "' + tag + '"?')) {
+        var f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '/items/delete/' + id;
+        var cs = document.createElement('input');
+        cs.type = 'hidden'; cs.name = '_csrf'; cs.value = '<%= csrfToken %>';
+        f.appendChild(cs);
+        document.body.appendChild(f);
+        f.submit();
+    }
 }
 </script>
