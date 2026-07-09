@@ -4,9 +4,9 @@ const { sendEmail } = require('./mailer');
 async function checkOverdueAllocations() {
     try {
         const overdue = await all(`
-            SELECT a.*, e.name as emp_name, e.email, e.department, i.asset_tag, i.category, i.brand
+            SELECT a.*, u.name as emp_name, u.email, u.department, i.asset_tag, i.category, i.brand
             FROM allocations a
-            JOIN employees e ON a.employee_id = e.id
+            JOIN users u ON a.employee_id = u.id
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL
@@ -57,9 +57,9 @@ async function checkOverdueAllocations() {
 async function checkUpcomingReturns(days = 7) {
     try {
         const upcoming = await all(`
-            SELECT a.*, e.name as emp_name, e.email, e.department, i.asset_tag, i.category, i.brand
+            SELECT a.*, u.name as emp_name, u.email, u.department, i.asset_tag, i.category, i.brand
             FROM allocations a
-            JOIN employees e ON a.employee_id = e.id
+            JOIN users u ON a.employee_id = u.id
             JOIN items i ON a.item_id = i.id
             WHERE a.status = 'active'
               AND a.expected_return_date IS NOT NULL

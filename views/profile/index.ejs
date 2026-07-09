@@ -28,45 +28,45 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-pencil me-1"></i> Edit Details</div>
             <div class="card-body">
-                <% if (employee) { %>
+                <% if (user.name) { %>
                 <form method="POST" action="/profile">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="mb-3">
                         <label class="form-label">Employee ID</label>
-                        <input type="text" class="form-control" value="<%= employee.emp_id %>" readonly>
+                        <input type="text" class="form-control" value="<%= user.username %>" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control" value="<%= employee.name %>" required>
+                        <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
                         <div class="form-text">Fix spelling mistakes here if needed.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Department</label>
-                        <input type="text" class="form-control" value="<%= employee.department || '-' %>" readonly>
+                        <input type="text" class="form-control" value="<%= user.department || '-' %>" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Designation</label>
-                        <input type="text" class="form-control" value="<%= employee.designation || '-' %>" readonly>
+                        <input type="text" class="form-control" value="<%= user.designation || '-' %>" readonly>
                     </div>
-                    <% if (employee.class_teacher) { %>
+                    <% if (user.class_teacher) { %>
                     <div class="mb-3">
                         <label class="form-label">Class Teacher</label>
-                        <input type="text" class="form-control" value="<%= employee.class_teacher %>" readonly>
+                        <input type="text" class="form-control" value="<%= user.class_teacher %>" readonly>
                     </div>
                     <% } %>
-                    <% if (employee.subject_teacher) { %>
+                    <% if (user.subject_teacher) { %>
                     <div class="mb-3">
                         <label class="form-label">Subject Teacher</label>
-                        <input type="text" class="form-control" value="<%= employee.subject_teacher %>" readonly>
+                        <input type="text" class="form-control" value="<%= user.subject_teacher %>" readonly>
                     </div>
                     <% } %>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" value="<%= employee.email || '' %>">
+                        <input type="email" name="email" class="form-control" value="<%= user.email || '' %>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone</label>
-                        <input type="text" name="phone" class="form-control" value="<%= employee.phone || '' %>">
+                        <input type="text" name="phone" class="form-control" value="<%= user.phone || '' %>">
                     </div>
                     <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Changes</button>
                 </form>

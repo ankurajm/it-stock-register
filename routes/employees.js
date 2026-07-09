@@ -12,26 +12,26 @@ router.get('/', requireAuth, async (req, res) => {
         const limit = 20;
         const offset = (page - 1) * limit;
 
-        let countQuery = `SELECT COUNT(*) as total FROM employees e WHERE 1=1`;
-        let query = `SELECT e.*, (SELECT COUNT(*) FROM allocations WHERE employee_id = e.id AND status='active') as allocated_items FROM employees e WHERE 1=1`;
+        let countQuery = `SELECT COUNT(*) as total FROM users WHERE username != 'admin' AND username != 'user' AND name != ''`;
+        let query = `SELECT u.*, (SELECT COUNT(*) FROM allocations WHERE employee_id = u.id AND status='active') as allocated_items FROM users u WHERE u.username != 'admin' AND u.username != 'user' AND u.name != ''`;
         let params = [];
 
         if (search) {
-            countQuery += ` AND (e.name LIKE ? OR e.emp_id LIKE ? OR e.department LIKE ?)`;
-            query += ` AND (e.name LIKE ? OR e.emp_id LIKE ? OR e.department LIKE ?)`;
+            countQuery += ` AND (u.name LIKE ? OR u.username LIKE ? OR u.department LIKE ?)`;
+            query += ` AND (u.name LIKE ? OR u.username LIKE ? OR u.department LIKE ?)`;
             params.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
         if (department) {
-            countQuery += ` AND e.department = ?`;
-            query += ` AND e.department = ?`;
+            countQuery += ` AND u.department = ?`;
+            query += ` AND u.department = ?`;
             params.push(department);
         }
         if (status) {
-            countQuery += ` AND e.status = ?`;
-            query += ` AND e.status = ?`;
+            countQuery += ` AND u.emp_status = ?`;
+            query += ` AND u.emp_status = ?`;
             params.push(status);
         }
-        query += ` ORDER BY e.name ASC LIMIT ? OFFSET ?`;
+        query += ` ORDER BY u.name ASC LIMIT ? OFFSET ?`;
 
         const totalResult = await get(countQuery, params);
         const totalItems = totalResult.total;
@@ -39,7 +39,7 @@ router.get('/', requireAuth, async (req, res) => {
         const employees = await all(query, [...params, limit, offset]);
         const currentPage = page;
 
-        const departments = await all(`SELECT DISTINCT department FROM employees WHERE department IS NOT NULL ORDER BY department`);
+        const departments = await all(`SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != '' AND name != '' ORDER BY department`);
 
         res.render('employees/list', { employees, departments, search, department, status, currentPage, totalPages, totalItems });
     } catch (err) {
@@ -57,19 +57,21 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         const joiningDateVal = joining_date || null;
-        await run(`INSERT INTO employees (emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [emp_id, name, department, designation, email, phone, joiningDateVal, status || 'active', class_teacher || '', subject_teacher || '']);
 
         const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
-        if (!existingUser) {
+        if (existingUser) {
+            // Update existing user with employee details
+            await run(`UPDATE users SET name=?, department=?, designation=?, email=?, phone=?, joining_date=?, emp_status=?, class_teacher=?, subject_teacher=? WHERE username=?`,
+                [name, department, designation, email, phone, joiningDateVal, status || 'active', class_teacher || '', subject_teacher || '', emp_id]);
+            req.flash('success', 'Employee ' + name + ' updated successfully');
+        } else {
+            // Create new user with employee details
             const initials = await generateInitialsForEmployee(name, designation, 'user');
             const password = generatePassword();
             const hashed = bcrypt.hashSync(password, 12);
-            await run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`,
-                [emp_id, hashed, initials, 'user']);
+            await run(`INSERT INTO users (username, password, initials, role, name, department, designation, email, phone, joining_date, emp_status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [emp_id, hashed, initials, 'user', name, department, designation, email, phone, joiningDateVal, status || 'active', class_teacher || '', subject_teacher || '']);
             req.flash('success', `Employee ${name} added. Username: ${emp_id}, Password: ${password}, Initials: ${initials}`);
-        } else {
-            req.flash('success', 'Employee ' + name + ' added successfully');
         }
 
         res.redirect('/employees');
@@ -82,8 +84,8 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
 
 router.get('/view/:id', requireAuth, async (req, res) => {
     try {
-        const employee = await get(`SELECT * FROM employees WHERE id = ?`, [req.params.id]);
-        if (!employee) {
+        const employee = await get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
+        if (!employee || !employee.name) {
             req.flash('error', 'Employee not found');
             return res.redirect('/employees');
         }
@@ -100,8 +102,8 @@ router.get('/view/:id', requireAuth, async (req, res) => {
 
 router.get('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const employee = await get(`SELECT * FROM employees WHERE id = ?`, [req.params.id]);
-        if (!employee) {
+        const employee = await get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
+        if (!employee || !employee.name) {
             req.flash('error', 'Employee not found');
             return res.redirect('/employees');
         }
@@ -117,18 +119,15 @@ router.post('/edit/:id', requireAuth, requireAdmin, require('express-rate-limit'
     try {
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
         const joiningDateVal = joining_date || null;
-        await run(`UPDATE employees SET emp_id=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
+        await run(`UPDATE users SET username=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, emp_status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
             [emp_id, name, department, designation, email, phone, joiningDateVal, status, class_teacher || '', subject_teacher || '', req.params.id]);
 
-        const user = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
-        if (user) {
-            const roleInitial = getRoleInitial(designation, 'user');
-            if (roleInitial) {
-                const current = await get(`SELECT initials FROM users WHERE username = ?`, [emp_id]);
-                if (current && current.initials !== roleInitial) {
-                    await run(`UPDATE users SET initials = '' WHERE initials = ? AND username != ?`, [roleInitial, emp_id]);
-                    await run(`UPDATE users SET initials = ? WHERE username = ?`, [roleInitial, emp_id]);
-                }
+        const roleInitial = getRoleInitial(designation, 'user');
+        if (roleInitial) {
+            const current = await get(`SELECT initials FROM users WHERE id = ?`, [req.params.id]);
+            if (current && current.initials !== roleInitial) {
+                await run(`UPDATE users SET initials = '' WHERE initials = ? AND id != ?`, [roleInitial, req.params.id]);
+                await run(`UPDATE users SET initials = ? WHERE id = ?`, [roleInitial, req.params.id]);
             }
         }
 
@@ -137,15 +136,15 @@ router.post('/edit/:id', requireAuth, requireAdmin, require('express-rate-limit'
     } catch (err) {
         console.error('Update employee error:', err.message);
         req.flash('error', 'Failed to update employee');
-            const employee = await get(`SELECT * FROM employees WHERE id = ?`, [req.params.id]);
+        const employee = await get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
         res.render('employees/add', { error: 'Failed to update employee', employee });
     }
 });
 
 router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const emp = await get(`SELECT name FROM employees WHERE id = ?`, [req.params.id]);
-        if (!emp) {
+        const emp = await get(`SELECT name FROM users WHERE id = ?`, [req.params.id]);
+        if (!emp || !emp.name) {
             req.flash('error', 'Employee not found');
             return res.redirect('/employees');
         }
@@ -155,9 +154,10 @@ router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
             await run(`UPDATE items SET status='available' WHERE id=?`, [a.item_id]);
         }
         await run(`UPDATE allocations SET status='returned', return_date=CURRENT_DATE WHERE employee_id=? AND status='active'`, [req.params.id]);
-        await run(`DELETE FROM employees WHERE id=?`, [req.params.id]);
+        // Clear employee fields instead of deleting the user account
+        await run(`UPDATE users SET name='', department='', designation='', emp_status='inactive' WHERE id=?`, [req.params.id]);
 
-        req.flash('success', 'Employee ' + emp.name + ' deleted successfully');
+        req.flash('success', 'Employee ' + emp.name + ' removed successfully');
         res.redirect('/employees');
     } catch (err) {
         console.error('Delete employee error:', err.message);
@@ -169,7 +169,7 @@ router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
 router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res) => {
     try {
         const PDFDocument = require('pdfkit');
-        const rows = await all(`SELECT e.emp_id, e.name, e.department, e.designation, u.username, u.initials FROM employees e LEFT JOIN users u ON u.username = e.emp_id ORDER BY e.name`);
+        const rows = await all(`SELECT username, name, department, designation, initials FROM users WHERE name != '' ORDER BY name`);
 
         const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
         res.setHeader('Content-Type', 'application/pdf');
@@ -205,10 +205,10 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
                 doc.rect(30, y - 2, pageWidth, 16).fillOpacity(0.05).fill('#f0f0f0').fillOpacity(1);
             }
             doc.fontSize(7).font('Helvetica');
-            doc.text(row.emp_id || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
+            doc.text(row.username || '-', colX[0] + 4, y, { width: colX[1] - colX[0] - 8 });
             doc.text(row.name || '-', colX[1] + 4, y, { width: colX[2] - colX[1] - 8 });
             doc.text(row.department || '-', colX[2] + 4, y, { width: colX[3] - colX[2] - 8 });
-            doc.text(row.username || 'No account', colX[3] + 4, y, { width: colX[4] - colX[3] - 8 });
+            doc.text(row.username || '-', colX[3] + 4, y, { width: colX[4] - colX[3] - 8 });
             doc.text(row.initials || '-', colX[4] + 4, y, { width: 80 });
             y += 16;
         }
@@ -224,27 +224,27 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
 router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, res) => {
     try {
         const ExcelJS = require('exceljs');
-        const rows = await all(`SELECT e.emp_id, e.name, e.department, e.designation, u.username, u.initials FROM employees e LEFT JOIN users u ON u.username = e.emp_id ORDER BY e.name`);
+        const rows = await all(`SELECT username, name, department, designation, initials FROM users WHERE name != '' ORDER BY name`);
 
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Employee Credentials');
 
         sheet.columns = [
-            { header: 'Emp ID', key: 'emp_id', width: 15 },
+            { header: 'Emp ID', key: 'username', width: 15 },
             { header: 'Name', key: 'name', width: 25 },
             { header: 'Department', key: 'department', width: 20 },
             { header: 'Designation', key: 'designation', width: 20 },
-            { header: 'Username', key: 'username', width: 15 },
+            { header: 'Username', key: 'username2', width: 15 },
             { header: 'Initials', key: 'initials', width: 10 }
         ];
 
         for (const row of rows) {
             sheet.addRow({
-                emp_id: row.emp_id,
+                username: row.username,
                 name: row.name,
                 department: row.department || '-',
                 designation: row.designation || '-',
-                username: row.username || '-',
+                username2: row.username,
                 initials: row.initials || '-'
             });
         }

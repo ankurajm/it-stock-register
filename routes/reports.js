@@ -226,7 +226,7 @@ router.get('/items/excel', requireAuth, async (req, res) => {
 
 router.get('/allocations/pdf', requireAuth, async (req, res) => {
     try {
-        const allocations = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, e.name as emp_name, e.emp_id as emp_code, e.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN employees e ON a.employee_id = e.id ORDER BY a.allocated_date DESC`);
+        const allocations = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, e.name as emp_name, e.username as emp_code, e.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN users e ON a.employee_id = e.id ORDER BY a.allocated_date DESC`);
 
         const activeAllocations = allocations.filter(a => a.status === 'active');
         const columns = ['asset_tag', 'emp_name', 'emp_code', 'department', 'allocated_date', 'status'];
@@ -239,7 +239,7 @@ router.get('/allocations/pdf', requireAuth, async (req, res) => {
 
 router.get('/allocations/excel', requireAuth, async (req, res) => {
     try {
-        const allocations = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, e.name as emp_name, e.emp_id as emp_code, e.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN employees e ON a.employee_id = e.id ORDER BY a.allocated_date DESC`);
+        const allocations = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, e.name as emp_name, e.username as emp_code, e.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN users e ON a.employee_id = e.id ORDER BY a.allocated_date DESC`);
 
         const columns = ['asset_tag', 'emp_name', 'emp_code', 'department', 'allocated_date', 'return_date', 'status'];
         await generateExcel(allocations, columns, 'All Allocations Report', res);
@@ -295,7 +295,7 @@ router.get('/warranty/excel', requireAuth, async (req, res) => {
 
 router.get('/my-items', requireAuth, async (req, res) => {
     try {
-        const emp = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
+        const emp = await get(`SELECT id FROM users WHERE username = ?`, [req.session.user.username]);
         const empId = emp ? emp.id : -1;
         const items = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, i.purchase_date, i.purchase_price, i.status as item_status FROM allocations a LEFT JOIN items i ON a.item_id = i.id WHERE a.employee_id = ? ORDER BY a.allocated_date DESC`, [empId]);
 
@@ -312,7 +312,7 @@ router.get('/my-items', requireAuth, async (req, res) => {
 router.get('/my-items/pdf', requireAuth, async (req, res) => {
     let doc;
     try {
-        const empRow = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
+        const empRow = await get(`SELECT id FROM users WHERE username = ?`, [req.session.user.username]);
         const employeeId = empRow ? empRow.id : -1;
         const items = await all(`SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, i.purchase_date, i.purchase_price, i.status as item_status FROM allocations a LEFT JOIN items i ON a.item_id = i.id WHERE a.employee_id = ? ORDER BY a.allocated_date DESC`, [employeeId]);
 
@@ -320,11 +320,11 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
         const returnedItems = items.filter(a => a.status === 'returned');
         const info = await getSchoolInfo();
 
-        const userInfo = await get(`SELECT * FROM employees WHERE id = ?`, [employeeId]);
+        const userInfo = await get(`SELECT * FROM users WHERE id = ?`, [employeeId]);
 
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
-        const filename = 'items_record_' + (userInfo ? userInfo.emp_id : req.session.user.username) + '.pdf';
+        const filename = 'items_record_' + (userInfo ? userInfo.username : req.session.user.username) + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
 
@@ -357,7 +357,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
         doc.moveDown(0.3);
         doc.fontSize(10).font('Helvetica');
         const name = userInfo ? userInfo.name : req.session.user.username;
-        const empId = userInfo ? userInfo.emp_id : '-';
+        const empId = userInfo ? userInfo.username : '-';
         const dept = userInfo ? userInfo.department : '-';
         const designation = userInfo ? userInfo.designation : '-';
         doc.text('Name:          ' + name);
@@ -457,7 +457,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
 
 router.get('/no-dues', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const employees = await all(`SELECT id, emp_id, name, department, designation FROM employees ORDER BY name`);
+        const employees = await all(`SELECT id, username, name, department, designation FROM users WHERE name != '' ORDER BY name`);
         res.render('reports/no-dues', { employees });
     } catch (err) {
         console.error('No dues page error:', err.message);
@@ -469,7 +469,7 @@ router.get('/no-dues', requireAuth, requireAdmin, async (req, res) => {
 router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) => {
     let doc;
     try {
-        const emp = await get(`SELECT * FROM employees WHERE emp_id = ?`, [req.params.empId]);
+        const emp = await get(`SELECT * FROM users WHERE username = ?`, [req.params.empId]);
         if (!emp) { return res.status(404).send('Employee not found'); }
 
         const employeeId = emp.id;
@@ -482,7 +482,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
 
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
-        const filename = 'no_dues_certificate_' + emp.emp_id + '.pdf';
+        const filename = 'no_dues_certificate_' + emp.username + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
 
@@ -519,7 +519,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
         doc.moveDown(0.3);
         doc.fontSize(10).font('Helvetica');
         doc.text('Name:          ' + emp.name);
-        doc.text('Employee ID:   ' + emp.emp_id);
+        doc.text('Employee ID:   ' + emp.username);
         doc.text('Department:    ' + (emp.department || '-'));
         doc.text('Designation:   ' + (emp.designation || '-'));
         doc.moveDown();
@@ -644,7 +644,7 @@ router.get('/departments', requireAuth, async (req, res) => {
                 COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
                 COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued,
                 COUNT(DISTINCT CASE WHEN i.status='maintenance' THEN i.id END) as in_maintenance
-            FROM employees e
+            FROM users e
             LEFT JOIN allocations a ON a.employee_id = e.id
             LEFT JOIN items i ON a.item_id = i.id
             WHERE e.department IS NOT NULL AND e.department != ''
@@ -666,7 +666,7 @@ router.get('/departments/pdf', requireAuth, async (req, res) => {
                    COUNT(DISTINCT e.id) as employee_count,
                    COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
                    COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued
-            FROM employees e
+            FROM users e
             LEFT JOIN allocations a ON a.employee_id = e.id
             LEFT JOIN items i ON a.item_id = i.id
             WHERE e.department IS NOT NULL AND e.department != ''
@@ -688,7 +688,7 @@ router.get('/departments/excel', requireAuth, async (req, res) => {
                    COUNT(DISTINCT e.id) as employee_count,
                    COUNT(DISTINCT CASE WHEN a.status='active' THEN a.id END) as active_allocations,
                    COUNT(DISTINCT CASE WHEN a.status='active' THEN i.id END) as items_issued
-            FROM employees e
+            FROM users e
             LEFT JOIN allocations a ON a.employee_id = e.id
             LEFT JOIN items i ON a.item_id = i.id
             WHERE e.department IS NOT NULL AND e.department != ''
@@ -707,16 +707,16 @@ router.get('/departments/:department/pdf', requireAuth, async (req, res) => {
     try {
         const dept = decodeURIComponent(req.params.department);
         const data = await all(`
-            SELECT e.name as emp_name, e.emp_id, e.designation,
+            SELECT e.name as emp_name, e.username, e.designation,
                    i.asset_tag, i.category, i.brand, i.model, i.serial_number,
                    a.allocated_date, a.expected_return_date, a.status as alloc_status
-            FROM employees e
+            FROM users e
             LEFT JOIN allocations a ON a.employee_id = e.id AND a.status = 'active'
             LEFT JOIN items i ON a.item_id = i.id
             WHERE e.department = ?
             ORDER BY e.name, i.asset_tag
         `, [dept]);
-        await generatePDF(data, ['emp_name', 'emp_id', 'designation', 'asset_tag', 'category', 'brand', 'model', 'allocated_date', 'alloc_status'], dept + ' Department - IT Assets Report', res);
+        await generatePDF(data, ['emp_name', 'username', 'designation', 'asset_tag', 'category', 'brand', 'model', 'allocated_date', 'alloc_status'], dept + ' Department - IT Assets Report', res);
     } catch (err) {
         console.error('Department detail PDF error:', err.message);
         req.flash('error', 'Failed to generate PDF');
@@ -728,16 +728,16 @@ router.get('/departments/:department/excel', requireAuth, async (req, res) => {
     try {
         const dept = decodeURIComponent(req.params.department);
         const data = await all(`
-            SELECT e.name as emp_name, e.emp_id, e.designation,
+            SELECT e.name as emp_name, e.username, e.designation,
                    i.asset_tag, i.category, i.brand, i.model, i.serial_number,
                    a.allocated_date, a.expected_return_date, a.status as alloc_status
-            FROM employees e
+            FROM users e
             LEFT JOIN allocations a ON a.employee_id = e.id AND a.status = 'active'
             LEFT JOIN items i ON a.item_id = i.id
             WHERE e.department = ?
             ORDER BY e.name, i.asset_tag
         `, [dept]);
-        await generateExcel(data, ['emp_name', 'emp_id', 'designation', 'asset_tag', 'category', 'brand', 'model', 'serial_number', 'allocated_date', 'expected_return_date', 'alloc_status'], dept + ' Department - IT Assets', res);
+        await generateExcel(data, ['emp_name', 'username', 'designation', 'asset_tag', 'category', 'brand', 'model', 'serial_number', 'allocated_date', 'expected_return_date', 'alloc_status'], dept + ' Department - IT Assets', res);
     } catch (err) {
         console.error('Department detail Excel error:', err.message);
         req.flash('error', 'Failed to generate Excel');
@@ -820,7 +820,7 @@ router.get('/locations/:location/pdf', requireAuth, async (req, res) => {
                    CASE WHEN a.status='active' THEN a.allocated_date ELSE NULL END as allocated_date
             FROM items i
             LEFT JOIN allocations a ON a.item_id = i.id AND a.status = 'active'
-            LEFT JOIN employees e ON a.employee_id = e.id
+            LEFT JOIN users e ON a.employee_id = e.id
             WHERE i.location = ?
             ORDER BY i.asset_tag
         `, [loc]);
@@ -842,7 +842,7 @@ router.get('/locations/:location/excel', requireAuth, async (req, res) => {
                    CASE WHEN a.status='active' THEN a.allocated_date ELSE NULL END as allocated_date
             FROM items i
             LEFT JOIN allocations a ON a.item_id = i.id AND a.status = 'active'
-            LEFT JOIN employees e ON a.employee_id = e.id
+            LEFT JOIN users e ON a.employee_id = e.id
             WHERE i.location = ?
             ORDER BY i.asset_tag
         `, [loc]);

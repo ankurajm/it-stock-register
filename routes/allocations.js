@@ -10,13 +10,13 @@ router.get('/', requireAuth, async (req, res) => {
         const limit = 20;
         const offset = (page - 1) * limit;
 
-        let countQuery = `SELECT COUNT(*) as total FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN employees e ON a.employee_id = e.id WHERE 1=1`;
-        let query = `SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, e.name as emp_name, e.emp_id as emp_code, e.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN employees e ON a.employee_id = e.id WHERE 1=1`;
+        let countQuery = `SELECT COUNT(*) as total FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN users u ON a.employee_id = u.id WHERE 1=1`;
+        let query = `SELECT a.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number, u.name as emp_name, u.username as emp_code, u.department FROM allocations a LEFT JOIN items i ON a.item_id = i.id LEFT JOIN users u ON a.employee_id = u.id WHERE 1=1`;
         let params = [];
 
         if (search) {
-            countQuery += ` AND (i.asset_tag LIKE ? OR e.name LIKE ? OR e.emp_id LIKE ?)`;
-            query += ` AND (i.asset_tag LIKE ? OR e.name LIKE ? OR e.emp_id LIKE ?)`;
+            countQuery += ` AND (i.asset_tag ILIKE ? OR u.name ILIKE ? OR u.username ILIKE ?)`;
+            query += ` AND (i.asset_tag ILIKE ? OR u.name ILIKE ? OR u.username ILIKE ?)`;
             params.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
         if (status) {
@@ -43,7 +43,7 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/allocate', requireAuth, requireAdmin, async (req, res) => {
     try {
         const items = await all(`SELECT * FROM items WHERE status='available' ORDER BY asset_tag`);
-        const employees = await all(`SELECT * FROM employees WHERE status='active' ORDER BY name`);
+        const employees = await all(`SELECT * FROM users WHERE emp_status='active' AND name != '' ORDER BY name`);
         res.render('allocations/add', { error: null, items, employees });
     } catch (err) {
         console.error('Allocate form error:', err.message);
@@ -62,7 +62,7 @@ router.post('/allocate', requireAuth, requireAdmin, async (req, res) => {
             return res.redirect('/allocations/allocate');
         }
 
-        const emp = await get(`SELECT name FROM employees WHERE id = ? AND status='active'`, [employee_id]);
+        const emp = await get(`SELECT name FROM users WHERE id = ? AND emp_status='active'`, [employee_id]);
         if (!emp) {
             req.flash('error', 'Employee not found or inactive');
             return res.redirect('/allocations/allocate');
@@ -83,8 +83,8 @@ router.post('/allocate', requireAuth, requireAdmin, async (req, res) => {
 
 router.get('/employee/:id/history', requireAuth, async (req, res) => {
     try {
-        const employee = await get(`SELECT * FROM employees WHERE id = ?`, [req.params.id]);
-        if (!employee) {
+        const employee = await get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
+        if (!employee || !employee.name) {
             req.flash('error', 'Employee not found');
             return res.redirect('/employees');
         }

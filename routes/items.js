@@ -149,11 +149,11 @@ router.get('/view/:id', requireAuth, async (req, res) => {
             return res.redirect('/items');
         }
 
-        const allocation = await get(`SELECT a.*, e.name as emp_name, e.emp_id as emp_code FROM allocations a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.item_id = ? AND a.status='active'`, [req.params.id]);
+        const allocation = await get(`SELECT a.*, e.name as emp_name, e.username as emp_code FROM allocations a LEFT JOIN users e ON a.employee_id = e.id WHERE a.item_id = ? AND a.status='active'`, [req.params.id]);
 
         const maintenanceLogs = await all(`SELECT * FROM maintenance WHERE item_id = ? ORDER BY issue_date DESC`, [req.params.id]);
 
-        const allocationHistory = await all(`SELECT a.*, e.name as emp_name, e.emp_id as emp_code FROM allocations a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.item_id = ? ORDER BY a.allocated_date DESC`, [req.params.id]);
+        const allocationHistory = await all(`SELECT a.*, e.name as emp_name, e.username as emp_code FROM allocations a LEFT JOIN users e ON a.employee_id = e.id WHERE a.item_id = ? ORDER BY a.allocated_date DESC`, [req.params.id]);
 
         res.render('items/view', { item, allocation, maintenanceLogs, allocationHistory });
     } catch (err) {

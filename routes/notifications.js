@@ -2,13 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { getNotifications, markAsRead, getUnreadCount } = require('../utils/notifications');
-const { get } = require('../config/db');
 
 router.get('/', requireAuth, async (req, res) => {
     try {
-        const employee = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
-        const employeeId = employee?.id;
-        const notifications = employeeId ? await getNotifications(employeeId, 50) : [];
+        const notifications = await getNotifications(req.session.user.id, 50);
         res.render('notifications/list', { notifications });
     } catch (err) {
         console.error('Notifications error:', err.message);
@@ -19,9 +16,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/read/:id', requireAuth, async (req, res) => {
     try {
-        const employee = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
-        if (!employee) return res.status(403).json({ error: 'Not authorized' });
-        const notif = await get(`SELECT id FROM notifications WHERE id = ? AND employee_id = ?`, [req.params.id, employee.id]);
+        const notif = await require('../config/db').get(`SELECT id FROM notifications WHERE id = ? AND employee_id = ?`, [req.params.id, req.session.user.id]);
         if (!notif) return res.status(404).json({ error: 'Notification not found' });
         await markAsRead(req.params.id);
         res.json({ success: true });
@@ -32,8 +27,7 @@ router.post('/read/:id', requireAuth, async (req, res) => {
 
 router.get('/unread-count', requireAuth, async (req, res) => {
     try {
-        const employee = await get(`SELECT id FROM employees WHERE emp_id = ?`, [req.session.user.username]);
-        const count = employee ? await getUnreadCount(employee.id) : 0;
+        const count = await getUnreadCount(req.session.user.id);
         res.json({ count });
     } catch (err) {
         res.json({ count: 0 });

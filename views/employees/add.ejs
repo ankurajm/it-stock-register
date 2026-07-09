@@ -21,8 +21,8 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Employee ID <span class="text-danger">*</span></label>
-                    <input type="text" name="emp_id" class="form-control" value="<%= employee ? employee.emp_id : '' %>" required>
+                    <label class="form-label">Employee ID / Username <span class="text-danger">*</span></label>
+                    <input type="text" name="emp_id" class="form-control" value="<%= employee ? employee.username : '' %>" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Full Name <span class="text-danger">*</span></label>

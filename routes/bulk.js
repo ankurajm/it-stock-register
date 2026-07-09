@@ -289,10 +289,10 @@ router.get('/template/users', requireAuth, requireAdmin, (req, res) => {
 });
 
 async function nextEmpId(trx) {
-    const last = await trx.get(`SELECT emp_id FROM employees ORDER BY id DESC LIMIT 1`);
+    const last = await trx.get(`SELECT username FROM users WHERE username LIKE 'EMP%' ORDER BY id DESC LIMIT 1`);
     let num = 0;
     if (last) {
-        num = parseInt(last.emp_id.replace(/[^0-9]/g, '')) || 0;
+        num = parseInt(last.username.replace(/[^0-9]/g, '')) || 0;
     }
     return 'EMP' + String(num + 1).padStart(4, '0');
 }
@@ -334,18 +334,12 @@ router.post('/employees', requireAuth, requireAdmin, upload.single('file'), vali
                     const classTeacher = row.class || row.class_teacher || '';
                     const subjectTeacher = row.subject || row.subject_teacher || '';
 
-                    await trx.run(`INSERT INTO employees (emp_id, name, designation, email, phone, class_teacher, subject_teacher, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [emp_id, name.trim(), designation, email, phone, classTeacher, subjectTeacher, 'active']);
-
-                    const existingUser = await trx.get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
-                    if (!existingUser) {
-                        const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
-                        const password = generatePassword();
-const hashed = bcrypt.hashSync(password, 12);
-                        await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [emp_id, hashed, initials, 'user']);
-                        results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
-                    } else {
-                        results.push({ emp_id, name: name.trim(), username: emp_id, password: '-', initials: '-', designation, class: classTeacher, subject: subjectTeacher });
-                    }
+                    const initials = await generateInitialsForEmployee(name.trim(), designation, 'user');
+                    const password = generatePassword();
+                    const hashed = bcrypt.hashSync(password, 12);
+                    await trx.run(`INSERT INTO users (username, password, initials, role, name, department, designation, email, phone, emp_status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [emp_id, hashed, initials, 'user', name.trim(), row.department || '', designation, email, phone, 'active', classTeacher, subjectTeacher]);
+                    results.push({ emp_id, name: name.trim(), username: emp_id, password, initials, designation, class: classTeacher, subject: subjectTeacher });
                     added++;
                 }
             });

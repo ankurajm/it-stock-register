@@ -31,7 +31,7 @@
                     <select name="employee_id" class="form-select" required>
                         <option value="">-- Select an active employee --</option>
                         <% employees.forEach(emp => { %>
-                        <option value="<%= emp.id %>"><%= emp.emp_id %> — <%= emp.name %><%= emp.department ? ' (' + emp.department + ')' : '' %></option>
+                        <option value="<%= emp.id %>"><%= emp.username %> — <%= emp.name %><%= emp.department ? ' (' + emp.department + ')' : '' %></option>
                         <% }); %>
                     </select>
                     <div class="form-text">Only <strong>Active</strong> employees are shown.</div>

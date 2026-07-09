@@ -18,7 +18,7 @@
                 <select name="employee" id="employee" class="form-select" required>
                     <option value="">-- Select Employee --</option>
                     <% employees.forEach(e => { %>
-                    <option value="<%= e.emp_id %>"><%= e.name %> (<%= e.emp_id %>) <%= e.department ? '- ' + e.department : '' %></option>
+                    <option value="<%= e.username %>"><%= e.name %> (<%= e.username %>) <%= e.department ? '- ' + e.department : '' %></option>
                     <% }); %>
                 </select>
             </div>
