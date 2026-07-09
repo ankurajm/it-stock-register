@@ -55,7 +55,7 @@ router.get('/add', requireAuth, requireAdmin, (req, res) => {
 
 router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
-        const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
+        const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher, initials: manualInitials } = req.body;
         const joiningDateVal = joining_date || null;
 
         const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
@@ -63,10 +63,19 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
             // Update existing user with employee details
             await run(`UPDATE users SET name=?, department=?, designation=?, email=?, phone=?, joining_date=?, emp_status=?, class_teacher=?, subject_teacher=? WHERE username=?`,
                 [name, department, designation, email, phone, joiningDateVal, status || 'active', class_teacher || '', subject_teacher || '', emp_id]);
+            // Update initials if admin provided one
+            if (manualInitials && manualInitials.trim()) {
+                await run(`UPDATE users SET initials = ? WHERE username = ?`, [manualInitials.trim().toUpperCase(), emp_id]);
+            }
             req.flash('success', 'Employee ' + name + ' updated successfully');
         } else {
             // Create new user with employee details
-            const initials = await generateInitialsForEmployee(name, designation, 'user');
+            let initials;
+            if (manualInitials && manualInitials.trim()) {
+                initials = manualInitials.trim().toUpperCase();
+            } else {
+                initials = await generateInitialsForEmployee(name, designation, 'user');
+            }
             const password = generatePassword();
             const hashed = bcrypt.hashSync(password, 12);
             await run(`INSERT INTO users (username, password, initials, role, name, department, designation, email, phone, joining_date, emp_status, class_teacher, subject_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -117,17 +126,22 @@ router.get('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
 
 router.post('/edit/:id', requireAuth, requireAdmin, require('express-rate-limit')({ windowMs: 60 * 1000, max: 30, handler: (req, res) => { req.flash('error', 'Too many requests.'); res.redirect('/employees'); } }), async (req, res) => {
     try {
-        const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher } = req.body;
+        const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher, initials: manualInitials } = req.body;
         const joiningDateVal = joining_date || null;
         await run(`UPDATE users SET username=?, name=?, department=?, designation=?, email=?, phone=?, joining_date=?, emp_status=?, class_teacher=?, subject_teacher=? WHERE id=?`,
             [emp_id, name, department, designation, email, phone, joiningDateVal, status, class_teacher || '', subject_teacher || '', req.params.id]);
 
-        const roleInitial = getRoleInitial(designation, 'user');
-        if (roleInitial) {
-            const current = await get(`SELECT initials FROM users WHERE id = ?`, [req.params.id]);
-            if (current && current.initials !== roleInitial) {
-                await run(`UPDATE users SET initials = '' WHERE initials = ? AND id != ?`, [roleInitial, req.params.id]);
-                await run(`UPDATE users SET initials = ? WHERE id = ?`, [roleInitial, req.params.id]);
+        // Update initials - admin can override
+        if (manualInitials && manualInitials.trim()) {
+            await run(`UPDATE users SET initials = ? WHERE id = ?`, [manualInitials.trim().toUpperCase(), req.params.id]);
+        } else {
+            const roleInitial = getRoleInitial(designation, 'user');
+            if (roleInitial) {
+                const current = await get(`SELECT initials FROM users WHERE id = ?`, [req.params.id]);
+                if (current && current.initials !== roleInitial) {
+                    await run(`UPDATE users SET initials = '' WHERE initials = ? AND id != ?`, [roleInitial, req.params.id]);
+                    await run(`UPDATE users SET initials = ? WHERE id = ?`, [roleInitial, req.params.id]);
+                }
             }
         }
 

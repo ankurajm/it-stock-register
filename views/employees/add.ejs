@@ -45,6 +45,11 @@
                     <input type="text" name="subject_teacher" class="form-control" value="<%= employee ? employee.subject_teacher : '' %>">
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Initials</label>
+                    <input type="text" name="initials" class="form-control" value="<%= employee ? employee.initials : '' %>" placeholder="Auto-generated if left empty" maxlength="10">
+                    <div class="form-text">Leave empty to auto-generate from name.</div>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" value="<%= employee ? employee.email : '' %>">
                 </div>
