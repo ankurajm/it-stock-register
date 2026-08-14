@@ -1,0 +1,154 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Transfer Asset</h4>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="/items">Items</a></li>
+                    <li class="breadcrumb-item"><a href="/items/view/<%= item.id %>"><%= item.asset_tag %></a></li>
+                    <li class="breadcrumb-item active">Transfer</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="/items/view/<%= item.id %>" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-building me-2"></i>Transfer Asset to Another School</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/items/transfer/<%= item.id %>">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>Transfer:</strong> This asset will be removed from your stock and transferred to the destination school.
+                                Make sure to get proper authorization and acknowledgment from the receiving school.
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="disposal_date" class="form-label">Transfer Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="disposal_date" name="disposal_date" 
+                                       value="<%= new Date().toISOString().split('T')[0] %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="authorized_by" class="form-label">Authorized By</label>
+                                <input type="text" class="form-control" id="authorized_by" name="authorized_by" 
+                                       placeholder="Name of authorizing person">
+                            </div>
+                            <div class="col-12">
+                                <label for="destination_school" class="form-label">Destination School <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="destination_school" name="destination_school" 
+                                       placeholder="Name of the school receiving the asset" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="destination_address" class="form-label">Destination Address</label>
+                                <textarea class="form-control" id="destination_address" name="destination_address" rows="2" 
+                                          placeholder="Full address of the destination school"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="received_by" class="form-label">Received By</label>
+                                <input type="text" class="form-control" id="received_by" name="received_by" 
+                                       placeholder="Name of person receiving at destination">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reason" class="form-label">Reason for Transfer</label>
+                                <input type="text" class="form-control" id="reason" name="reason" 
+                                       placeholder="e.g., Surplus stock, inter-school transfer...">
+                            </div>
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                          placeholder="Condition of item at time of transfer, any other remarks..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="/items/view/<%= item.id %>" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary" onclick="return confirm('Confirm transfer of this asset to the specified school?');">
+                                <i class="bi bi-building me-1"></i> Confirm Transfer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Asset Details</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr>
+                            <td class="text-muted" style="width:40%">Asset Tag</td>
+                            <td><strong><%= item.asset_tag %></strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Category</td>
+                            <td><span class="badge bg-primary"><%= item.category %></span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Brand</td>
+                            <td><%= item.brand || '-' %></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Model</td>
+                            <td><%= item.model || '-' %></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Serial No.</td>
+                            <td><code><%= item.serial_number || '-' %></code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status</td>
+                            <td>
+                                <% if (item.status === 'available') { %>
+                                    <span class="badge bg-success">Available</span>
+                                <% } else if (item.status === 'allocated') { %>
+                                    <span class="badge bg-warning text-dark">Allocated</span>
+                                <% } else if (item.status === 'maintenance') { %>
+                                    <span class="badge bg-danger">Maintenance</span>
+                                <% } else if (item.status === 'fixed') { %>
+                                    <span class="badge bg-info">Fixed</span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary"><%= item.status %></span>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Location</td>
+                            <td><%= item.location || '-' %></td>
+                        </tr>
+                        <% if (item.purchase_price) { %>
+                        <tr>
+                            <td class="text-muted">Purchase Price</td>
+                            <td>&#8377;<%= parseFloat(item.purchase_price).toLocaleString('en-IN') %></td>
+                        </tr>
+                        <% } %>
+                    </table>
+                </div>
+            </div>
+
+            <% if (allocation) { %>
+            <div class="card border-0 shadow-sm border-start border-warning border-3">
+                <div class="card-body">
+                    <h6 class="card-title text-warning"><i class="bi bi-person-exclamation me-1"></i> Currently Allocated</h6>
+                    <p class="mb-1"><strong><%= allocation.emp_name %></strong></p>
+                    <p class="mb-0 text-muted small">Allocated on: <%= allocation.allocated_date %></p>
+                    <p class="text-muted small">The allocation will be closed automatically.</p>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>

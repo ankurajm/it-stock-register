@@ -854,4 +854,166 @@ router.get('/locations/:location/excel', requireAuth, async (req, res) => {
     }
 });
 
+router.get('/discarded/pdf', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT d.disposal_date as date, i.asset_tag, i.category, i.brand, i.model,
+                   i.serial_number, i.purchase_date, i.purchase_price, i.location,
+                   d.reason, d.authorized_by, u.username as discarded_by
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'discarded'
+            ORDER BY d.disposal_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'date', 'reason', 'authorized_by', 'discarded_by'];
+        await generatePDF(data, columns, 'Discarded Assets Report', res);
+    } catch (err) {
+        console.error('Discarded PDF error:', err.message);
+        res.status(500).send('PDF generation failed');
+    }
+});
+
+router.get('/discarded/excel', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT d.disposal_date as date, i.asset_tag, i.category, i.brand, i.model,
+                   i.serial_number, i.purchase_date, i.purchase_price, i.location,
+                   d.reason, d.authorized_by, u.username as discarded_by
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'discarded'
+            ORDER BY d.disposal_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'date', 'purchase_date', 'purchase_price', 'location', 'reason', 'authorized_by', 'discarded_by'];
+        await generateExcel(data, columns, 'Discarded Assets', res);
+    } catch (err) {
+        console.error('Discarded Excel error:', err.message);
+        res.status(500).send('Excel generation failed');
+    }
+});
+
+router.get('/transferred/pdf', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT d.disposal_date as date, i.asset_tag, i.category, i.brand, i.model,
+                   i.serial_number, i.purchase_date, i.purchase_price, i.location,
+                   d.destination_school, d.destination_address, d.received_by,
+                   d.reason, d.authorized_by, u.username as transferred_by
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'transferred'
+            ORDER BY d.disposal_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'date', 'destination_school', 'received_by', 'authorized_by', 'transferred_by'];
+        await generatePDF(data, columns, 'Transferred Assets Report', res);
+    } catch (err) {
+        console.error('Transferred PDF error:', err.message);
+        res.status(500).send('PDF generation failed');
+    }
+});
+
+router.get('/transferred/excel', requireAuth, async (req, res) => {
+    try {
+        const data = await all(`
+            SELECT d.disposal_date as date, i.asset_tag, i.category, i.brand, i.model,
+                   i.serial_number, i.purchase_date, i.purchase_price, i.location,
+                   d.destination_school, d.destination_address, d.received_by,
+                   d.reason, d.authorized_by, u.username as transferred_by
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'transferred'
+            ORDER BY d.disposal_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'date', 'purchase_date', 'purchase_price', 'location', 'destination_school', 'destination_address', 'received_by', 'reason', 'authorized_by', 'transferred_by'];
+        await generateExcel(data, columns, 'Transferred Assets', res);
+    } catch (err) {
+        console.error('Transferred Excel error:', err.message);
+        res.status(500).send('Excel generation failed');
+    }
+});
+
+router.get('/discarded', requireAuth, async (req, res) => {
+    try {
+        const items = await all(`
+            SELECT i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.purchase_date, i.purchase_price, i.condition, i.location,
+                   dh.action_date, dh.reason, dh.remarks, u.username as performed_by
+            FROM items i
+            LEFT JOIN discard_history dh ON dh.item_id = i.id
+            LEFT JOIN users u ON dh.performed_by = u.id
+            WHERE i.status = 'discarded'
+            ORDER BY dh.action_date DESC
+        `);
+        res.render('reports/discarded', { items });
+    } catch (err) {
+        console.error('Discarded report error:', err.message);
+        req.flash('error', 'Failed to load report');
+        res.redirect('/reports');
+    }
+});
+
+router.get('/discarded/pdf', requireAuth, async (req, res) => {
+    try {
+        const items = await all(`
+            SELECT i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.purchase_date, i.purchase_price, i.condition, i.location,
+                   dh.action_date, dh.action_type, dh.reason, dh.remarks,
+                   dh.destination_school, dh.destination_address,
+                   u.username as performed_by
+            FROM items i
+            LEFT JOIN discard_history dh ON dh.item_id = i.id
+            LEFT JOIN users u ON dh.performed_by = u.id
+            WHERE i.status = 'discarded'
+            ORDER BY dh.action_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'action_date', 'action_type', 'destination_school', 'reason', 'performed_by'];
+        const data = items.map(r => ({
+            asset_tag: r.asset_tag, category: r.category, brand: r.brand || '', model: r.model || '',
+            serial_number: r.serial_number || '', action_date: r.action_date || '',
+            action_type: r.action_type === 'handed_over' ? 'Handed Over' : 'Disposed',
+            destination_school: r.destination_school || '-', reason: r.reason || '',
+            performed_by: r.performed_by || ''
+        }));
+        await generatePDF(data, columns, 'Discarded and Handed Over Assets', res);
+    } catch (err) {
+        console.error('Discarded PDF error:', err.message);
+        req.flash('error', 'Failed to generate PDF');
+        res.redirect('/reports/discarded');
+    }
+});
+
+router.get('/discarded/excel', requireAuth, async (req, res) => {
+    try {
+        const items = await all(`
+            SELECT i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.purchase_date, i.purchase_price, i.condition, i.location,
+                   dh.action_date, dh.action_type, dh.reason, dh.remarks,
+                   dh.destination_school, dh.destination_address,
+                   u.username as performed_by
+            FROM items i
+            LEFT JOIN discard_history dh ON dh.item_id = i.id
+            LEFT JOIN users u ON dh.performed_by = u.id
+            WHERE i.status = 'discarded'
+            ORDER BY dh.action_date DESC
+        `);
+        const columns = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'action_date', 'action_type', 'destination_school', 'destination_address', 'reason', 'remarks', 'performed_by'];
+        const data = items.map(r => ({
+            asset_tag: r.asset_tag, category: r.category, brand: r.brand || '', model: r.model || '',
+            serial_number: r.serial_number || '', action_date: r.action_date || '',
+            action_type: r.action_type === 'handed_over' ? 'Handed Over' : 'Disposed',
+            destination_school: r.destination_school || '', destination_address: r.destination_address || '',
+            reason: r.reason || '', remarks: r.remarks || '', performed_by: r.performed_by || ''
+        }));
+        await generateExcel(data, columns, 'Discarded and Handed Over Assets', res);
+    } catch (err) {
+        console.error('Discarded Excel error:', err.message);
+        req.flash('error', 'Failed to generate Excel');
+        res.redirect('/reports/discarded');
+    }
+});
+
 module.exports = router;

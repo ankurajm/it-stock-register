@@ -1,0 +1,72 @@
+<% title = 'Discard ' + item.asset_tag %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-trash me-2"></i> Discard Asset</h4>
+        <small class="text-muted"><%= item.asset_tag %> &middot; <%= item.category %> &middot; <%= item.brand || '' %> <%= item.model || '' %></small>
+    </div>
+    <a href="/items/view/<%= item.id %>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<% if (error) { %>
+<div class="alert alert-danger alert-dismissible fade show border-start border-danger border-4"><i class="bi bi-exclamation-triangle me-2"></i> <%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<% } %>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-trash me-1"></i> Discard Details</div>
+            <div class="card-body p-4">
+                <form method="POST" action="/items/discard/<%= item.id %>" class="needs-validation" novalidate>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Action Type <span class="text-danger">*</span></label>
+                            <select name="action_type" class="form-select" required>
+                                <option value="disposed">Disposed (Scrap/Discard)</option>
+                            </select>
+                            <div class="form-text">Asset will be marked as discarded and removed from active stock</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Action Date <span class="text-danger">*</span></label>
+                            <input type="date" name="action_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Reason for Discarding <span class="text-danger">*</span></label>
+                            <textarea name="reason" class="form-control" rows="3" required placeholder="e.g. Asset is broken beyond repair, obsolete, no longer functional..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Additional Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2" placeholder="Any additional notes about the disposal..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-top d-flex gap-2">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to discard this item? This action cannot be undone.')"><i class="bi bi-trash me-1"></i> Confirm Discard</button>
+                        <a href="/items/view/<%= item.id %>" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger bg-opacity-10"><i class="bi bi-info-circle me-1"></i> Item Summary</div>
+            <div class="card-body">
+                <div class="mb-2"><small class="text-muted">Asset Tag</small><div class="fw-bold"><%= item.asset_tag %></div></div>
+                <div class="mb-2"><small class="text-muted">Category</small><div><span class="badge bg-secondary"><%= item.category %></span></div></div>
+                <div class="mb-2"><small class="text-muted">Brand / Model</small><div><%= item.brand || '-' %> <%= item.model || '-' %></div></div>
+                <div class="mb-2"><small class="text-muted">Serial Number</small><div><code><%= item.serial_number || '-' %></code></div></div>
+                <div class="mb-2"><small class="text-muted">Current Status</small><div>
+                    <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>
+                    <% } else if (item.status === 'allocated') { %><span class="badge bg-warning text-dark">Allocated</span>
+                    <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
+                    <% } else { %><span class="badge bg-secondary"><%= item.status %></span><% } %>
+                </div></div>
+                <div class="mb-2"><small class="text-muted">Condition</small><div><%= item.condition || '-' %></div></div>
+                <div class="mb-0"><small class="text-muted">Location</small><div><%= item.location || '-' %></div></div>
+            </div>
+        </div>
+        <div class="alert alert-warning mt-3 mb-0">
+            <small><i class="bi bi-exclamation-triangle me-1"></i> <strong>Warning:</strong> Discarding an asset will permanently mark it as discarded and return any active allocation.</small>
+        </div>
+    </div>
+</div>

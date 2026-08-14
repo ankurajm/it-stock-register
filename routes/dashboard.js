@@ -30,6 +30,9 @@ router.get('/', requireAuth, async (req, res) => {
         const totalValue = await get(`SELECT COALESCE(SUM(purchase_price), 0) as value FROM items WHERE purchase_price IS NOT NULL`);
         const underWarranty = await get(`SELECT COUNT(*) as count FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) >= CURRENT_DATE`);
 
+        const discardedCount = await get(`SELECT COUNT(*) as count FROM items WHERE status='discarded'`);
+        const transferredCount = await get(`SELECT COUNT(*) as count FROM items WHERE status='transferred'`);
+
         const expiringWarranty = await all(`SELECT * FROM items WHERE warranty_end IS NOT NULL AND date(warranty_end) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' ORDER BY warranty_end ASC`);
 
         const overdueAllocations = await all(`
@@ -72,7 +75,9 @@ router.get('/', requireAuth, async (req, res) => {
             activeAllocations: activeAllocations.count,
             pendingMaintenance: pendingMaintenance.count,
             totalValue: totalValue.value,
-            underWarranty: underWarranty.count
+            underWarranty: underWarranty.count,
+            discardedCount: discardedCount.count,
+            transferredCount: transferredCount.count
         };
 
         res.render('dashboard', {
@@ -96,7 +101,7 @@ router.get('/', requireAuth, async (req, res) => {
             stats: {
                 totalItems: 0, available: 0, allocated: 0, fixedCount: 0, maintenanceCount: 0,
                 totalEmployees: 0, activeAllocations: 0, pendingMaintenance: 0,
-                totalValue: 0, underWarranty: 0
+                totalValue: 0, underWarranty: 0, discardedCount: 0, transferredCount: 0
             },
             expiringWarranty: [], overdueAllocations: [], upcomingReturns: [],
             recentItems: [], recentAllocations: [],

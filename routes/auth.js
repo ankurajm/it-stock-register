@@ -54,7 +54,7 @@ router.post('/login', require('express-rate-limit')({
         });
     } catch (err) {
         console.error('[USER LOGIN] CATCH ERROR:', err.message, err.stack);
-        req.flash('error', 'Login failed: ' + err.message);
+        req.flash('error', 'Login failed. Please try again later.');
         res.redirect('/login');
     }
 });
@@ -107,7 +107,7 @@ router.post('/login/admin', require('express-rate-limit')({
         });
     } catch (err) {
         console.error('[ADMIN LOGIN] CATCH ERROR:', err.message, err.stack);
-        req.flash('error', 'Login failed: ' + err.message);
+        req.flash('error', 'Login failed. Please try again later.');
         res.redirect('/login/admin');
     }
 });

@@ -5,8 +5,12 @@
         <small class="text-muted"><%= item.category %> &middot; <%= item.brand || '' %> <%= item.model || '' %></small>
     </div>
     <div class="d-flex gap-2">
+        <% if (item.status !== 'discarded' && item.status !== 'transferred') { %>
         <a href="/items/edit/<%= item.id %>" class="btn btn-warning"><i class="bi bi-pencil"></i> Edit</a>
         <a href="/allocations/allocate" class="btn btn-outline-warning"><i class="bi bi-arrow-right"></i> Allocate</a>
+        <a href="/items/discard/<%= item.id %>" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Discard</a>
+        <a href="/items/transfer/<%= item.id %>" class="btn btn-outline-info"><i class="bi bi-arrow-right-circle"></i> Transfer</a>
+        <% } %>
         <a href="/items" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
     </div>
 </div>
@@ -21,6 +25,11 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance"><i class="bi bi-tools me-1"></i>Maintenance</button>
     </li>
+    <% if (discardHistory && discardHistory.length > 0) { %>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#history"><i class="bi bi-clock-history me-1"></i>History</button>
+    </li>
+    <% } %>
 </ul>
 
 <div class="tab-content">
@@ -40,7 +49,9 @@
                                 <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>
                                 <% } else if (item.status === 'allocated') { %><span class="badge bg-warning text-dark">Allocated</span>
                                 <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
-                                <% } else if (item.status === 'disposed') { %><span class="badge bg-dark">Disposed</span>
+                                <% } else if (item.status === 'fixed') { %><span class="badge bg-info">Fixed</span>
+                                <% } else if (item.status === 'discarded') { %><span class="badge bg-dark">Discarded</span>
+                                <% } else if (item.status === 'transferred') { %><span class="badge bg-primary">Transferred</span>
                                 <% } else { %><span class="badge bg-secondary"><%= item.status %></span><% } %>
                             </div>
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Condition</small><span><%= item.condition || '-' %></span></div>
@@ -51,8 +62,33 @@
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Warranty End</small><span><%= item.warranty_end || '-' %></span></div>
                             <div class="col-12"><small class="text-muted d-block">Specifications</small><p class="mb-0"><%= item.specifications || '-' %></p></div>
                             <div class="col-12"><small class="text-muted d-block">Notes</small><p class="mb-0"><%= item.notes || '-' %></p></div>
-                        </div>
-                    </div>
+    </div>
+
+    <% if (discardHistory && discardHistory.length > 0) { %>
+    <div class="tab-pane fade" id="history">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history me-1"></i> Discard / Handover History</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th>Date</th><th>Action</th><th>Destination</th><th>Reason</th><th>Remarks</th><th>By</th></tr></thead>
+                    <tbody>
+                        <% discardHistory.forEach(dh => { %>
+                        <tr>
+                            <td><%= dh.action_date %></td>
+                            <td><span class="badge bg-<%= dh.action_type === 'handed_over' ? 'info text-dark' : 'secondary' %>"><%= dh.action_type === 'handed_over' ? 'Handed Over' : 'Disposed' %></span></td>
+                            <td><%= dh.destination_school || '-' %><% if (dh.destination_address) { %><br><small class="text-muted"><%= dh.destination_address %></small><% } %></td>
+                            <td><%= dh.reason %></td>
+                            <td><%= dh.remarks || '-' %></td>
+                            <td><%= dh.performed_by_name || '-' %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>
                 </div>
             </div>
             <div class="col-lg-4">

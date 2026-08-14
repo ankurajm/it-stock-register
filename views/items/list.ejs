@@ -51,6 +51,8 @@
                     <option value="fixed" <%= status === 'fixed' ? 'selected' : '' %>>Fixed (Permanent)</option>
                     <option value="maintenance" <%= status === 'maintenance' ? 'selected' : '' %>>Maintenance</option>
                     <option value="disposed" <%= status === 'disposed' ? 'selected' : '' %>>Disposed</option>
+                    <option value="discarded" <%= status === 'discarded' ? 'selected' : '' %>>Discarded</option>
+                    <option value="transferred" <%= status === 'transferred' ? 'selected' : '' %>>Transferred</option>
                 </select>
             </div>
             <div class="col-6 col-md-2">
@@ -110,6 +112,8 @@
                             <% } else if (item.status === 'fixed') { %><span class="badge bg-info">Fixed</span>
                             <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
                             <% } else if (item.status === 'disposed') { %><span class="badge bg-dark">Disposed</span>
+                            <% } else if (item.status === 'discarded') { %><span class="badge bg-dark">Discarded</span>
+                            <% } else if (item.status === 'transferred') { %><span class="badge bg-primary">Transferred</span>
                             <% } else { %><span class="badge bg-secondary"><%= item.status %></span><% } %>
                         </td>
                         <td class="text-end">

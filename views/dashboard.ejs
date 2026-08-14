@@ -103,6 +103,20 @@
             <div class="stat-label">Active Allocations</div>
         </div>
     </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card red">
+            <div class="stat-icon"><i class="bi bi-trash"></i></div>
+            <div class="stat-number"><%= stats.discardedCount %></div>
+            <div class="stat-label">Discarded</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card primary">
+            <div class="stat-icon"><i class="bi bi-building"></i></div>
+            <div class="stat-number"><%= stats.transferredCount || 0 %></div>
+            <div class="stat-label">Transferred</div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -168,6 +182,7 @@
                                     <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>
                                     <% } else if (item.status === 'allocated') { %><span class="badge bg-warning text-dark">Allocated</span>
                                     <% } else if (item.status === 'maintenance') { %><span class="badge bg-danger">Maintenance</span>
+                                    <% } else if (item.status === 'discarded') { %><span class="badge bg-secondary">Discarded</span>
                                     <% } %></td>
                             </tr>
                             <% }); %>

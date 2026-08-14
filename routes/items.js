@@ -155,7 +155,9 @@ router.get('/view/:id', requireAuth, async (req, res) => {
 
         const allocationHistory = await all(`SELECT a.*, e.name as emp_name, e.username as emp_code FROM allocations a LEFT JOIN users e ON a.employee_id = e.id WHERE a.item_id = ? ORDER BY a.allocated_date DESC`, [req.params.id]);
 
-        res.render('items/view', { item, allocation, maintenanceLogs, allocationHistory });
+        const discardHistory = await all(`SELECT dh.*, u.username as performed_by_name FROM discard_history dh LEFT JOIN users u ON dh.performed_by = u.id WHERE dh.item_id = ? ORDER BY dh.created_at DESC`, [req.params.id]);
+
+        res.render('items/view', { item, allocation, maintenanceLogs, allocationHistory, discardHistory });
     } catch (err) {
         console.error('View item error:', err.message);
         req.flash('error', 'Failed to load item details');
@@ -397,6 +399,156 @@ router.post('/seed-fixed', requireAuth, requireAdmin, async (req, res) => {
     } catch (err) {
         console.error('Seed fixed assets error:', err.message);
         req.flash('error', 'Failed to add fixed assets: ' + err.message);
+        res.redirect('/items');
+    }
+});
+
+router.get('/discarded', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { page } = req.query;
+        const currentPage = Math.max(1, parseInt(page) || 1);
+        const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+        const totalResult = await get(`SELECT COUNT(*) as total FROM asset_disposals WHERE disposal_type = 'discarded'`);
+        const totalItems = totalResult.total;
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+        const items = await all(`
+            SELECT d.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.purchase_date, i.purchase_price, i.location, u.username as created_by_name
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'discarded'
+            ORDER BY d.disposal_date DESC
+            LIMIT ? OFFSET ?
+        `, [ITEMS_PER_PAGE, offset]);
+
+        res.render('items/discarded-list', { items, currentPage, totalPages, totalItems });
+    } catch (err) {
+        console.error('Discarded list error:', err.message);
+        req.flash('error', 'Failed to load discarded assets');
+        res.redirect('/items');
+    }
+});
+
+router.get('/transferred', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { page } = req.query;
+        const currentPage = Math.max(1, parseInt(page) || 1);
+        const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+        const totalResult = await get(`SELECT COUNT(*) as total FROM asset_disposals WHERE disposal_type = 'transferred'`);
+        const totalItems = totalResult.total;
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+        const items = await all(`
+            SELECT d.*, i.asset_tag, i.category, i.brand, i.model, i.serial_number,
+                   i.purchase_date, i.purchase_price, i.location, u.username as created_by_name
+            FROM asset_disposals d
+            LEFT JOIN items i ON d.item_id = i.id
+            LEFT JOIN users u ON d.created_by = u.id
+            WHERE d.disposal_type = 'transferred'
+            ORDER BY d.disposal_date DESC
+            LIMIT ? OFFSET ?
+        `, [ITEMS_PER_PAGE, offset]);
+
+        res.render('items/transferred-list', { items, currentPage, totalPages, totalItems });
+    } catch (err) {
+        console.error('Transferred list error:', err.message);
+        req.flash('error', 'Failed to load transferred assets');
+        res.redirect('/items');
+    }
+});
+
+router.get('/discard/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const item = await get(`SELECT * FROM items WHERE id = ?`, [req.params.id]);
+        if (!item) {
+            req.flash('error', 'Item not found');
+            return res.redirect('/items');
+        }
+        if (item.status === 'discarded' || item.status === 'transferred') {
+            req.flash('error', 'This item has already been ' + item.status);
+            return res.redirect('/items');
+        }
+        const allocation = await get(`SELECT a.*, e.name as emp_name FROM allocations a LEFT JOIN users e ON a.employee_id = e.id WHERE a.item_id = ? AND a.status = 'active'`, [req.params.id]);
+        res.render('items/discard', { item, allocation });
+    } catch (err) {
+        console.error('Discard form error:', err.message);
+        req.flash('error', 'Failed to load form');
+        res.redirect('/items');
+    }
+});
+
+router.post('/discard/:id', requireAuth, requireAdmin, mutationLimiter, validateCsrf, async (req, res) => {
+    try {
+        const item = await get(`SELECT * FROM items WHERE id = ?`, [req.params.id]);
+        if (!item) {
+            req.flash('error', 'Item not found');
+            return res.redirect('/items');
+        }
+
+        const { disposal_date, reason, authorized_by, notes } = req.body;
+
+        await run(`
+            INSERT INTO asset_disposals (item_id, disposal_type, disposal_date, reason, authorized_by, notes, created_by)
+            VALUES (?, 'discarded', ?, ?, ?, ?, ?)
+        `, [item.id, disposal_date, reason || '', authorized_by || '', notes || '', req.session.user.id]);
+
+        await run(`UPDATE items SET status = 'discarded', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [item.id]);
+
+        req.flash('success', 'Item ' + item.asset_tag + ' has been discarded successfully');
+        res.redirect('/items/discarded');
+    } catch (err) {
+        console.error('Discard error:', err.message);
+        req.flash('error', 'Failed to discard item');
+        res.redirect('/items');
+    }
+});
+
+router.get('/transfer/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const item = await get(`SELECT * FROM items WHERE id = ?`, [req.params.id]);
+        if (!item) {
+            req.flash('error', 'Item not found');
+            return res.redirect('/items');
+        }
+        if (item.status === 'discarded' || item.status === 'transferred') {
+            req.flash('error', 'This item has already been ' + item.status);
+            return res.redirect('/items');
+        }
+        const allocation = await get(`SELECT a.*, e.name as emp_name FROM allocations a LEFT JOIN users e ON a.employee_id = e.id WHERE a.item_id = ? AND a.status = 'active'`, [req.params.id]);
+        res.render('items/transfer', { item, allocation });
+    } catch (err) {
+        console.error('Transfer form error:', err.message);
+        req.flash('error', 'Failed to load form');
+        res.redirect('/items');
+    }
+});
+
+router.post('/transfer/:id', requireAuth, requireAdmin, mutationLimiter, validateCsrf, async (req, res) => {
+    try {
+        const item = await get(`SELECT * FROM items WHERE id = ?`, [req.params.id]);
+        if (!item) {
+            req.flash('error', 'Item not found');
+            return res.redirect('/items');
+        }
+
+        const { disposal_date, destination_school, destination_address, reason, authorized_by, received_by, notes } = req.body;
+
+        await run(`
+            INSERT INTO asset_disposals (item_id, disposal_type, disposal_date, reason, destination_school, destination_address, authorized_by, received_by, notes, created_by)
+            VALUES (?, 'transferred', ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [item.id, disposal_date, reason || '', destination_school || '', destination_address || '', authorized_by || '', received_by || '', notes || '', req.session.user.id]);
+
+        await run(`UPDATE items SET status = 'transferred', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [item.id]);
+
+        req.flash('success', 'Item ' + item.asset_tag + ' has been transferred successfully');
+        res.redirect('/items/transferred');
+    } catch (err) {
+        console.error('Transfer error:', err.message);
+        req.flash('error', 'Failed to transfer item');
         res.redirect('/items');
     }
 });

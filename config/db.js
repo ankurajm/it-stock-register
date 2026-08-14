@@ -10,8 +10,20 @@ let schemaInitialized = false;
 function getDB() {
     if (!pool) {
         const { Pool } = require('pg');
-        const connectionString = process.env.DATABASE_URL || `postgresql://localhost:5432/it_stock`;
-        pool = new Pool({ connectionString, max: 10, ssl: { rejectUnauthorized: false } });
+        let poolConfig;
+        if (process.env.DATABASE_URL) {
+            poolConfig = { connectionString: process.env.DATABASE_URL, ssl: false };
+        } else {
+            poolConfig = {
+                host: 'localhost',
+                port: 5432,
+                user: 'postgres',
+                password: 'postgres',
+                database: 'it_stock',
+                ssl: false
+            };
+        }
+        pool = new Pool(poolConfig);
         console.log('PostgreSQL pool created');
     }
     return pool;
@@ -164,6 +176,20 @@ async function migrate() {
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS emp_status TEXT DEFAULT 'active'`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS class_teacher TEXT DEFAULT ''`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS subject_teacher TEXT DEFAULT ''`,
+        `CREATE TABLE IF NOT EXISTS discard_history (
+            id SERIAL PRIMARY KEY,
+            item_id INTEGER REFERENCES items(id) ON DELETE SET NULL,
+            action_type TEXT NOT NULL,
+            action_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            destination_school TEXT DEFAULT '',
+            destination_address TEXT DEFAULT '',
+            reason TEXT DEFAULT '',
+            remarks TEXT DEFAULT '',
+            performed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_discard_history_item_id ON discard_history(item_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_discard_history_action_type ON discard_history(action_type)`,
     ];
     for (const sql of migrations) {
         try { await getDB().query(sql); } catch (e) { /* ignore */ }
@@ -220,6 +246,29 @@ async function migrate() {
     } catch (e) {
         console.log('Employee migration skipped:', e.message);
     }
+
+    // Create asset_disposals table for discarded and transferred assets
+    try {
+        await getDB().query(`
+            CREATE TABLE IF NOT EXISTS asset_disposals (
+                id SERIAL PRIMARY KEY,
+                item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+                disposal_type TEXT NOT NULL CHECK (disposal_type IN ('discarded', 'transferred')),
+                disposal_date DATE NOT NULL,
+                reason TEXT DEFAULT '',
+                destination_school TEXT DEFAULT '',
+                destination_address TEXT DEFAULT '',
+                authorized_by TEXT DEFAULT '',
+                received_by TEXT DEFAULT '',
+                notes TEXT DEFAULT '',
+                created_by INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_item_id ON asset_disposals(item_id)`);
+        await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_type ON asset_disposals(disposal_type)`);
+        await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_date ON asset_disposals(disposal_date)`);
+    } catch (e) { /* ignore */ }
 
     // Create notifications table if not exists (updated FK)
     try {

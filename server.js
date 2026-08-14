@@ -82,7 +82,9 @@ app.use((req, res, next) => {
         await initSchema();
         console.log('Database schema initialized');
     } catch (err) {
-        console.error('Schema initialization failed:', err.message);
+        console.error('FATAL: Schema initialization failed:', err.message);
+        console.error('Check your DATABASE_URL environment variable');
+        process.exit(1);
     }
 })();
 

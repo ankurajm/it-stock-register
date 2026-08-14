@@ -68,6 +68,16 @@
                         <i class="bi bi-clock-history"></i> Activity Log
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= typeof path !== 'undefined' && path === '/items/discarded' ? 'active' : '' %>" href="/items/discarded">
+                        <i class="bi bi-trash3"></i> Discarded
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= typeof path !== 'undefined' && path === '/items/transferred' ? 'active' : '' %>" href="/items/transferred">
+                        <i class="bi bi-building"></i> Transferred
+                    </a>
+                </li>
                 <li class="nav-item mt-2">
                     <hr>
                 </li>
