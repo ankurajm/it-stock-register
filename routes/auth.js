@@ -24,14 +24,12 @@ router.post('/login', require('express-rate-limit')({
     console.log('[USER LOGIN] Attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
-        console.log('[USER LOGIN] User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
         if (!user) {
-            console.log('[USER LOGIN] No user found');
             req.flash('error', 'Invalid username or password');
             logEvent(null, username || '', 'login_failed', req).catch(() => {});
             return res.redirect('/login');
         }
-        const pwMatch = bcrypt.compareSync(password, user.password);
+        const pwMatch = await bcrypt.compare(password, user.password);
         console.log('[USER LOGIN] Password match:', pwMatch);
         if (!pwMatch) {
             req.flash('error', 'Invalid username or password');
@@ -74,17 +72,14 @@ router.post('/login/admin', require('express-rate-limit')({
     }
 }), async (req, res) => {
     const { username, password } = req.body;
-    console.log('[ADMIN LOGIN] Attempt:', username);
     try {
         const user = await get(`SELECT * FROM users WHERE username = ?`, [username]);
-        console.log('[ADMIN LOGIN] User found:', user ? 'yes' : 'no', user ? 'role:' + user.role : '');
         if (!user || user.role !== 'admin') {
-            console.log('[ADMIN LOGIN] Not admin or not found');
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
             return res.redirect('/login/admin');
         }
-        const pwMatch = bcrypt.compareSync(password, user.password);
+        const pwMatch = await bcrypt.compare(password, user.password);
         console.log('[ADMIN LOGIN] Password match:', pwMatch);
         if (!pwMatch) {
             req.flash('error', 'Admin access denied. Invalid credentials.');
@@ -112,7 +107,7 @@ router.post('/login/admin', require('express-rate-limit')({
     }
 });
 
-router.get('/logout', (req, res) => {
+router.post('/logout', (req, res) => {
     const userId = req.session.user?.id;
     const username = req.session.user?.username;
     req.session.destroy(() => {

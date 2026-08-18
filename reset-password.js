@@ -7,24 +7,19 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { get, all, getDB } = require('./config/db');
 
+const readline = require('readline');
 const username = process.argv[2];
-const newPassword = process.argv[3];
 
-if (!username || !newPassword) {
+if (!username) {
     console.log('');
     console.log('  IT Stock Register — Password Reset Tool');
     console.log('  ========================================');
     console.log('');
-    console.log('  Usage:   node reset-password.js <username> <new-password>');
-    console.log('  Example: node reset-password.js admin MyNewPass123');
+    console.log('  Usage:   node reset-password.js <username>');
+    console.log('  Example: node reset-password.js admin');
     console.log('');
-    console.log('  This script resets any user\'s password without needing to log in.');
+    console.log('  You will be prompted to enter the new password.');
     console.log('');
-    process.exit(1);
-}
-
-if (newPassword.length < 4) {
-    console.error('Password must be at least 4 characters.');
     process.exit(1);
 }
 
@@ -33,9 +28,19 @@ if (newPassword.length < 4) {
         const user = await get(`SELECT id, username, role FROM users WHERE username = ?`, [username]);
         if (!user) {
             console.error(`User "${username}" not found.`);
-            console.log('Available users:');
-            const users = await all(`SELECT username, role FROM users ORDER BY username`);
-            users.forEach(u => console.log(`  - ${u.username} (${u.role})`));
+            process.exit(1);
+        }
+
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const newPassword = await new Promise(resolve => {
+            rl.question('  Enter new password: ', answer => {
+                rl.close();
+                resolve(answer);
+            });
+        });
+
+        if (!newPassword || newPassword.length < 8) {
+            console.error('Password must be at least 8 characters.');
             process.exit(1);
         }
 

@@ -38,11 +38,14 @@ async function generateInitials(name) {
     }
 
     let n = 1;
-    while (true) {
+    const maxAttempts = 1000;
+    while (n <= maxAttempts) {
         const c = ((clean[0] || 'X') + (clean[1] || 'X') + n).toUpperCase();
         if (!existing.has(c) && !RESERVED.has(c)) return c;
         n++;
     }
+    const fallback = 'USR' + Date.now().toString(36).slice(-3).toUpperCase();
+    return fallback;
 }
 
 const ROLE_INITIALS_MAP = {
@@ -68,11 +71,13 @@ async function generateInitialsForEmployee(name, designation, role) {
     return await generateInitials(name);
 }
 
-function generatePassword(length = 8) {
+function generatePassword(length = 12) {
+    const crypto = require('crypto');
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let pwd = '';
+    const randomBytes = crypto.randomBytes(length);
     for (let i = 0; i < length; i++) {
-        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+        pwd += chars.charAt(randomBytes[i] % chars.length);
     }
     return pwd;
 }

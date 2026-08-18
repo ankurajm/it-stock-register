@@ -37,11 +37,11 @@ app.set('layout', 'layout');
 app.set('trust proxy', 1);
 app.use(layouts);
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', (req, res, next) => {
     if (req.session && req.session.user) return next();
     return res.status(403).send('Access denied');
-}, express.static('uploads'));
+}, express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -152,7 +152,12 @@ if (config.backupCron && process.env.DATABASE_URL) {
             const { execFileSync } = require('child_process');
             const ts = new Date().toISOString().replace(/[:.]/g, '-');
             const file = path.join(config.backupDir, `backup-${ts}.sql`);
-            execFileSync('pg_dump', [process.env.DATABASE_URL], { stdio: ['ignore', require('fs').openSync(file, 'w'), 'ignore'] });
+            const fd = require('fs').openSync(file, 'w');
+            try {
+                execFileSync('pg_dump', [process.env.DATABASE_URL], { stdio: ['ignore', fd, 'ignore'] });
+            } finally {
+                require('fs').closeSync(fd);
+            }
             console.log('Backup saved:', file);
         } catch (err) {
             console.error('Scheduled backup failed:', err.message);
@@ -193,7 +198,9 @@ const server = app.listen(PORT, HOST, () => {
     console.log('='.repeat(50));
     console.log('');
 
-    setTimeout(() => openBrowser(localUrl), 2000);
+    setTimeout(() => {
+        if (process.env.NODE_ENV !== 'production') openBrowser(localUrl);
+    }, 2000);
 });
 
 function gracefulShutdown(signal) {
@@ -214,6 +221,9 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err.message);
     gracefulShutdown('uncaughtException');
+});
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection:', reason);
 });
 
 module.exports = app;

@@ -171,10 +171,10 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light"><tr><th>Asset Tag</th><th>Category</th><th>Status</th></tr></thead>
                         <tbody>
-                            <% if (recentItems.length === 0) { %>
+                            <% if (typeof recentItems !== 'undefined' && recentItems.length === 0) { %>
                             <tr><td colspan="3" class="text-center text-muted py-4">No items yet</td></tr>
                             <% } %>
-                            <% recentItems.forEach(item => { %>
+                            <% if (typeof recentItems !== 'undefined') { recentItems.forEach(item => { %>
                             <tr>
                                 <td><a href="/items/view/<%= item.id %>" class="fw-medium"><%= item.asset_tag %></a></td>
                                 <td><%= item.category %></td>
@@ -185,7 +185,7 @@
                                     <% } else if (item.status === 'discarded') { %><span class="badge bg-secondary">Discarded</span>
                                     <% } %></td>
                             </tr>
-                            <% }); %>
+                            <% }); } %>
                         </tbody>
                     </table>
                 </div>
@@ -271,7 +271,7 @@
     new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
         data: {
-            labels: [<% categoryStats.forEach((c,i) => { %><%- JSON.stringify(c.category) %><%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
+            labels: [<% categoryStats.forEach((c,i) => { %>'<%= c.category.replace(/\\/g, '\\\\').replace(/'/g, "\\'") %>'<%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
             datasets: [{
                 data: [<% categoryStats.forEach((c,i) => { %><%= c.count %><%= i < categoryStats.length - 1 ? ',' : '' %><% }); %>],
                 backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1','#0dcaf0','#20c997','#fd7e14','#d63384'],

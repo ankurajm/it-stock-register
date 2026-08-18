@@ -62,33 +62,8 @@
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Warranty End</small><span><%= item.warranty_end || '-' %></span></div>
                             <div class="col-12"><small class="text-muted d-block">Specifications</small><p class="mb-0"><%= item.specifications || '-' %></p></div>
                             <div class="col-12"><small class="text-muted d-block">Notes</small><p class="mb-0"><%= item.notes || '-' %></p></div>
-    </div>
-
-    <% if (discardHistory && discardHistory.length > 0) { %>
-    <div class="tab-pane fade" id="history">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-clock-history me-1"></i> Discard / Handover History</div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light"><tr><th>Date</th><th>Action</th><th>Destination</th><th>Reason</th><th>Remarks</th><th>By</th></tr></thead>
-                    <tbody>
-                        <% discardHistory.forEach(dh => { %>
-                        <tr>
-                            <td><%= dh.action_date %></td>
-                            <td><span class="badge bg-<%= dh.action_type === 'handed_over' ? 'info text-dark' : 'secondary' %>"><%= dh.action_type === 'handed_over' ? 'Handed Over' : 'Disposed' %></span></td>
-                            <td><%= dh.destination_school || '-' %><% if (dh.destination_address) { %><br><small class="text-muted"><%= dh.destination_address %></small><% } %></td>
-                            <td><%= dh.reason %></td>
-                            <td><%= dh.remarks || '-' %></td>
-                            <td><%= dh.performed_by_name || '-' %></td>
-                        </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <% } %>
-</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-4">
@@ -185,4 +160,29 @@
             </div>
         </div>
     </div>
+
+    <% if (typeof discardHistory !== 'undefined' && discardHistory && discardHistory.length > 0) { %>
+    <div class="tab-pane fade" id="history">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history me-1"></i> Discard / Handover History</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th>Date</th><th>Action</th><th>Destination</th><th>Reason</th><th>Remarks</th><th>By</th></tr></thead>
+                    <tbody>
+                        <% discardHistory.forEach(dh => { %>
+                        <tr>
+                            <td><%= dh.action_date %></td>
+                            <td><span class="badge bg-<%= dh.action_type === 'handed_over' ? 'info text-dark' : 'secondary' %>"><%= dh.action_type === 'handed_over' ? 'Handed Over' : 'Disposed' %></span></td>
+                            <td><%= dh.destination_school || '-' %><% if (dh.destination_address) { %><br><small class="text-muted"><%= dh.destination_address %></small><% } %></td>
+                            <td><%= dh.reason %></td>
+                            <td><%= dh.remarks || '-' %></td>
+                            <td><%= dh.performed_by_name || '-' %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <% } %>
 </div>

@@ -85,6 +85,7 @@ router.post('/delete/:id', requireAuth, requireAdmin, async (req, res) => {
             req.flash('error', 'Cannot delete yourself');
             return res.redirect('/employees');
         }
+        await run(`UPDATE allocations SET employee_id = NULL WHERE employee_id = ? AND status = 'active'`, [req.params.id]);
         await run(`DELETE FROM users WHERE id=?`, [req.params.id]);
         req.flash('success', 'User deleted successfully');
         res.redirect('/employees');

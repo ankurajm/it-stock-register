@@ -12,14 +12,19 @@ function getDB() {
         const { Pool } = require('pg');
         let poolConfig;
         if (process.env.DATABASE_URL) {
-            poolConfig = { connectionString: process.env.DATABASE_URL, ssl: false };
+            poolConfig = {
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }
+            };
+        } else if (process.env.NODE_ENV === 'production') {
+            throw new Error('DATABASE_URL is required in production');
         } else {
             poolConfig = {
-                host: 'localhost',
-                port: 5432,
-                user: 'postgres',
-                password: 'postgres',
-                database: 'it_stock',
+                host: process.env.DB_HOST || 'localhost',
+                port: parseInt(process.env.DB_PORT || '5432'),
+                user: process.env.DB_USER || 'postgres',
+                password: process.env.DB_PASSWORD || 'postgres',
+                database: process.env.DB_NAME || 'it_stock',
                 ssl: false
             };
         }
@@ -38,7 +43,7 @@ function convertParams(sql, params) {
         .replace(/date\('now'\)/g, 'CURRENT_DATE')
         .replace(/date\((\w+)\)/g, "NULLIF($1::text, '')::date")
         .replace(/\bLIKE\b/g, 'ILIKE');
-    if (pgSql.includes('AUTOINCREMENT') || pgSql.includes('AUTOINCREMENT')) {
+    if (pgSql.includes('AUTOINCREMENT') || pgSql.includes('AUTO_INCREMENT')) {
         pgSql = pgSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY');
     }
     return { sql: pgSql, params };
@@ -192,7 +197,7 @@ async function migrate() {
         `CREATE INDEX IF NOT EXISTS idx_discard_history_action_type ON discard_history(action_type)`,
     ];
     for (const sql of migrations) {
-        try { await getDB().query(sql); } catch (e) { /* ignore */ }
+        try { await getDB().query(sql); } catch (e) { console.error('Migration warning:', e.message); }
     }
 
     // Migrate employee data into users table (if employees table exists and users don't have name yet)
@@ -268,7 +273,7 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_item_id ON asset_disposals(item_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_type ON asset_disposals(disposal_type)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_asset_disposals_date ON asset_disposals(disposal_date)`);
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.error('Asset disposals migration warning:', e.message); }
 
     // Create notifications table if not exists (updated FK)
     try {
@@ -287,7 +292,7 @@ async function migrate() {
         `);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.error('Notifications table migration warning:', e.message); }
 }
 
 module.exports = { getDB, run, get, all, transaction, initSchema };

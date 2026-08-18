@@ -101,7 +101,8 @@ router.post('/edit/:id', requireAuth, requireAdmin, async (req, res) => {
         if (status === 'resolved' && record.status !== 'resolved') {
             const activeCount = await get(`SELECT COUNT(*) as count FROM maintenance WHERE item_id=? AND status!='resolved' AND id!=?`, [item_id, req.params.id]);
             if (activeCount.count === 0) {
-                await run(`UPDATE items SET status='available' WHERE id=?`, [item_id]);
+                const hasAllocation = await get(`SELECT id FROM allocations WHERE item_id=? AND status='active'`, [item_id]);
+                await run(`UPDATE items SET status=? WHERE id=?`, [hasAllocation ? 'allocated' : 'available', item_id]);
             }
         }
 
@@ -143,7 +144,8 @@ router.post('/:id/resolve', requireAuth, requireAdmin, async (req, res) => {
 
         const activeCount = await get(`SELECT COUNT(*) as count FROM maintenance WHERE item_id=? AND status!='resolved'`, [record.item_id]);
         if (activeCount.count === 0) {
-            await run(`UPDATE items SET status='available' WHERE id=?`, [record.item_id]);
+            const hasAllocation = await get(`SELECT id FROM allocations WHERE item_id=? AND status='active'`, [record.item_id]);
+            await run(`UPDATE items SET status=? WHERE id=?`, [hasAllocation ? 'allocated' : 'available', record.item_id]);
         }
 
         const item = await get(`SELECT asset_tag FROM items WHERE id=?`, [record.item_id]);

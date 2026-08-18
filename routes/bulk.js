@@ -110,12 +110,15 @@ router.post('/items', requireAuth, requireAdmin, upload.single('file'), validate
 
         // Confirm step: process previously previewed file
         if (req.body.confirm && req.body._tempFile) {
-            const tempPath = path.join(__dirname, '..', req.body._tempFile);
-            if (!fs.existsSync(tempPath)) {
+            const tempDir = path.join(__dirname, '..', 'uploads', 'temp');
+            const tempBase = path.basename(req.body._tempFile);
+            const tempPath = path.join(tempDir, tempBase);
+            const resolved = path.resolve(tempPath);
+            if (!resolved.startsWith(path.resolve(tempDir)) || !fs.existsSync(resolved)) {
                 return res.render('bulk/items', { error: 'Preview expired, please upload again', success: null, preview: null });
             }
-            const content = fs.readFileSync(tempPath, 'utf8');
-            fs.unlinkSync(tempPath);
+            const content = fs.readFileSync(resolved, 'utf8');
+            fs.unlinkSync(resolved);
 
             const lines = content.split('\n').filter(l => l.trim());
             const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
@@ -194,12 +197,15 @@ router.post('/users', requireAuth, requireAdmin, upload.single('file'), validate
         cleanupStaleTempFiles();
 
         if (req.body.confirm && req.body._tempFile) {
-            const tempPath = path.join(__dirname, '..', req.body._tempFile);
-            if (!fs.existsSync(tempPath)) {
+            const tempDir = path.join(__dirname, '..', 'uploads', 'temp');
+            const tempBase = path.basename(req.body._tempFile);
+            const tempPath = path.join(tempDir, tempBase);
+            const resolved = path.resolve(tempPath);
+            if (!resolved.startsWith(path.resolve(tempDir)) || !fs.existsSync(resolved)) {
                 return res.render('bulk/users', { error: 'Preview expired, please upload again', success: null, preview: null, results: null });
             }
-            const content = fs.readFileSync(tempPath, 'utf8');
-            fs.unlinkSync(tempPath);
+            const content = fs.readFileSync(resolved, 'utf8');
+            fs.unlinkSync(resolved);
 
             const lines = content.split('\n').filter(l => l.trim());
             const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z_]/g, ''));
@@ -215,7 +221,7 @@ router.post('/users', requireAuth, requireAdmin, upload.single('file'), validate
                     if (existing) { skipped++; continue; }
                     const initials = row.initials || await generateInitials(row.username);
                     const password = row.password || generatePassword();
-                    const hashed = bcrypt.hashSync(password, 8);
+                    const hashed = bcrypt.hashSync(password, 12);
                     await trx.run(`INSERT INTO users (username, password, initials, role) VALUES (?, ?, ?, ?)`, [row.username, hashed, initials, row.role || 'user']);
                     results.push({ username: row.username, password, initials });
                     added++;
@@ -306,12 +312,15 @@ router.post('/employees', requireAuth, requireAdmin, upload.single('file'), vali
         cleanupStaleTempFiles();
 
         if (req.body.confirm && req.body._tempFile) {
-            const tempPath = path.join(__dirname, '..', req.body._tempFile);
-            if (!fs.existsSync(tempPath)) {
+            const tempDir = path.join(__dirname, '..', 'uploads', 'temp');
+            const tempBase = path.basename(req.body._tempFile);
+            const tempPath = path.join(tempDir, tempBase);
+            const resolved = path.resolve(tempPath);
+            if (!resolved.startsWith(path.resolve(tempDir)) || !fs.existsSync(resolved)) {
                 return res.render('bulk/employees', { error: 'Preview expired, please upload again', success: null, preview: null, results: null });
             }
-            const content = fs.readFileSync(tempPath, 'utf8');
-            fs.unlinkSync(tempPath);
+            const content = fs.readFileSync(resolved, 'utf8');
+            fs.unlinkSync(resolved);
 
             const lines = content.split('\n').filter(l => l.trim());
             const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''));

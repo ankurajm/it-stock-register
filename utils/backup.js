@@ -9,8 +9,13 @@ async function performBackup() {
     const file = path.join(config.backupDir, `backup-${date}.sql`);
 
     try {
-        const { execSync } = require('child_process');
-        execSync(`pg_dump "${process.env.DATABASE_URL}" > "${file}"`, { stdio: 'ignore' });
+        const { execFileSync } = require('child_process');
+        const fd = require('fs').openSync(file, 'w');
+        try {
+            execFileSync('pg_dump', [process.env.DATABASE_URL], { stdio: ['ignore', fd, 'ignore'] });
+        } finally {
+            require('fs').closeSync(fd);
+        }
         console.log(`Backup created: ${file}`);
         return file;
     } catch (err) {

@@ -58,7 +58,11 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
         const { emp_id, name, department, designation, email, phone, joining_date, status, class_teacher, subject_teacher, initials: manualInitials } = req.body;
         const joiningDateVal = joining_date || null;
 
-        const existingUser = await get(`SELECT id FROM users WHERE username = ?`, [emp_id]);
+        const existingUser = await get(`SELECT id, name FROM users WHERE username = ?`, [emp_id]);
+        if (existingUser && existingUser.name) {
+            req.flash('error', 'Employee ID "' + emp_id + '" is already assigned to "' + existingUser.name + '". Use edit instead.');
+            return res.redirect('/employees');
+        }
         if (existingUser) {
             // Update existing user with employee details
             await run(`UPDATE users SET name=?, department=?, designation=?, email=?, phone=?, joining_date=?, emp_status=?, class_teacher=?, subject_teacher=? WHERE username=?`,
@@ -91,7 +95,7 @@ router.post('/add', requireAuth, requireAdmin, require('express-rate-limit')({ w
     }
 });
 
-router.get('/view/:id', requireAuth, async (req, res) => {
+router.get('/view/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const employee = await get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
         if (!employee || !employee.name) {

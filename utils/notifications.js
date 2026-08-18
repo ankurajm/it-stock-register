@@ -1,6 +1,11 @@
 const { all, run, get } = require('../config/db');
 const { sendEmail } = require('./mailer');
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 async function checkOverdueAllocations() {
     try {
         const overdue = await all(`
@@ -33,13 +38,13 @@ async function checkOverdueAllocations() {
                     await sendEmail(
                         alloc.email,
                         `Overdue IT Asset Return: ${alloc.asset_tag}`,
-                        `<p>Dear ${alloc.emp_name},</p>
+                        `<p>Dear ${escapeHtml(alloc.emp_name)},</p>
                          <p>This is a reminder that the following IT asset is overdue for return:</p>
                          <ul>
-                            <li><strong>Asset Tag:</strong> ${alloc.asset_tag}</li>
-                            <li><strong>Category:</strong> ${alloc.category}</li>
-                            <li><strong>Brand:</strong> ${alloc.brand || '-'}</li>
-                            <li><strong>Expected Return:</strong> ${alloc.expected_return_date}</li>
+                            <li><strong>Asset Tag:</strong> ${escapeHtml(alloc.asset_tag)}</li>
+                            <li><strong>Category:</strong> ${escapeHtml(alloc.category)}</li>
+                            <li><strong>Brand:</strong> ${escapeHtml(alloc.brand) || '-'}</li>
+                            <li><strong>Expected Return:</strong> ${escapeHtml(alloc.expected_return_date)}</li>
                          </ul>
                          <p>Please return the item to the IT department immediately.</p>
                          <p>Regards,<br>IT Stock Register</p>`
@@ -86,13 +91,13 @@ async function checkUpcomingReturns(days = 7) {
                     await sendEmail(
                         alloc.email,
                         `IT Asset Return Reminder: ${alloc.asset_tag}`,
-                        `<p>Dear ${alloc.emp_name},</p>
+                        `<p>Dear ${escapeHtml(alloc.emp_name)},</p>
                          <p>This is a friendly reminder that the following IT asset is due for return soon:</p>
                          <ul>
-                            <li><strong>Asset Tag:</strong> ${alloc.asset_tag}</li>
-                            <li><strong>Category:</strong> ${alloc.category}</li>
-                            <li><strong>Brand:</strong> ${alloc.brand || '-'}</li>
-                            <li><strong>Expected Return:</strong> ${alloc.expected_return_date}</li>
+                            <li><strong>Asset Tag:</strong> ${escapeHtml(alloc.asset_tag)}</li>
+                            <li><strong>Category:</strong> ${escapeHtml(alloc.category)}</li>
+                            <li><strong>Brand:</strong> ${escapeHtml(alloc.brand) || '-'}</li>
+                            <li><strong>Expected Return:</strong> ${escapeHtml(alloc.expected_return_date)}</li>
                          </ul>
                          <p>Please return the item to the IT department on or before the due date.</p>
                          <p>Regards,<br>IT Stock Register</p>`

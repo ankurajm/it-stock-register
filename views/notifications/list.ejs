@@ -44,7 +44,7 @@
 
 <script>
 function markRead(id) {
-    fetch('/notifications/read/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    fetch('/notifications/read/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' } })
         .then(r => r.json())
         .then(d => {
             if (d.success) {

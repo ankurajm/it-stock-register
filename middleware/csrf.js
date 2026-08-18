@@ -6,9 +6,9 @@ function csrfProtection(req, res, next) {
     }
     res.locals.csrfToken = req.session.csrfToken;
 
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.body && typeof req.body === 'object' && !req.is('multipart/form-data')) {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.body && typeof req.body === 'object') {
         const token = req.body._csrf || req.get('X-CSRF-Token');
-        if (!token || token !== req.session.csrfToken) {
+        if (!token || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(req.session.csrfToken))) {
             req.flash('error', 'Session expired. Please refresh and try again.');
             return res.redirect(req.originalUrl || '/');
         }
@@ -18,7 +18,7 @@ function csrfProtection(req, res, next) {
 
 function validateCsrf(req, res, next) {
     const token = req.body._csrf || req.get('X-CSRF-Token');
-    if (!token || token !== req.session.csrfToken) {
+    if (!token || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(req.session.csrfToken))) {
         req.flash('error', 'Session expired. Please refresh and try again.');
         return res.redirect(req.originalUrl || '/');
     }
