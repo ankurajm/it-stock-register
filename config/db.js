@@ -12,9 +12,11 @@ function getDB() {
         const { Pool } = require('pg');
         let poolConfig;
         if (process.env.DATABASE_URL) {
+            const isLocal = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL);
+            const sslDisabled = process.env.DB_SSL === 'false' || isLocal;
             poolConfig = {
                 connectionString: process.env.DATABASE_URL,
-                ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }
+                ssl: sslDisabled ? false : { rejectUnauthorized: false }
             };
         } else if (process.env.NODE_ENV === 'production') {
             throw new Error('DATABASE_URL is required in production');
