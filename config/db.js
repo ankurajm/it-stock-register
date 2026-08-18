@@ -300,23 +300,24 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
     } catch (e) { console.error('Notifications table migration warning:', e.message); }
 
-    // Fix bogus admin passwords that were seeded with invalid placeholder hashes
+    // Ensure default admin/user passwords are valid on every startup
     try {
         const bcrypt = require('bcryptjs');
-        const bogusHashes = [
-            '$2a$12$LJ3m4ys3GZvSHJba1b5OxuQpP8YfZ5YX5YX5YX5YX5YX5YX5YX5YX'
+        const defaults = [
+            { username: 'admin', password: 'admin123', role: 'admin', initials: 'ADM' },
+            { username: 'user', password: 'user123', role: 'user', initials: 'USR' }
         ];
-        const admin = await get(`SELECT id, password FROM users WHERE username = 'admin'`);
-        if (admin && bogusHashes.includes(admin.password)) {
-            const fixed = bcrypt.hashSync('admin123', 12);
-            await run(`UPDATE users SET password = $1 WHERE id = $2`, [fixed, admin.id]);
-            console.log('Admin password hash repaired (reset to admin123)');
-        }
-        const user = await get(`SELECT id, password FROM users WHERE username = 'user'`);
-        if (user && bogusHashes.includes(user.password)) {
-            const fixed = bcrypt.hashSync('user123', 12);
-            await run(`UPDATE users SET password = $1 WHERE id = $2`, [fixed, user.id]);
-            console.log('User password hash repaired (reset to user123)');
+        for (const d of defaults) {
+            const existing = await get(`SELECT id, password FROM users WHERE username = $1`, [d.username]);
+            if (!existing) {
+                const hashed = bcrypt.hashSync(d.password, 12);
+                await run(`INSERT INTO users (username, password, role, initials) VALUES ($1, $2, $3, $4)`, [d.username, hashed, d.role, d.initials]);
+                console.log(`Default ${d.username} user created (${d.username} / ${d.password})`);
+            } else if (!bcrypt.compareSync(d.password, existing.password)) {
+                const hashed = bcrypt.hashSync(d.password, 12);
+                await run(`UPDATE users SET password = $1 WHERE id = $2`, [hashed, existing.id]);
+                console.log(`Password for ${d.username} repaired (reset to ${d.password})`);
+            }
         }
     } catch (e) { console.error('Password repair migration warning:', e.message); }
 }
