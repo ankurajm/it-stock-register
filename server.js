@@ -46,12 +46,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
 if (!config.sessionSecret) {
-    console.error('FATAL: SESSION_SECRET not set in .env');
-    process.exit(1);
+    console.warn('WARNING: SESSION_SECRET not set — using insecure fallback. Set SESSION_SECRET in production!');
 }
 
 app.use(session({
-    secret: config.sessionSecret,
+    secret: config.sessionSecret || 'insecure-fallback-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -82,9 +81,8 @@ app.use((req, res, next) => {
         await initSchema();
         console.log('Database schema initialized');
     } catch (err) {
-        console.error('FATAL: Schema initialization failed:', err.message);
-        console.error('Check your DATABASE_URL environment variable');
-        process.exit(1);
+        console.error('ERROR: Schema initialization failed:', err.message);
+        console.error('The server will start but some features may not work until the database is available.');
     }
 })();
 

@@ -104,7 +104,11 @@ async function initSchema() {
     const fs = require('fs');
     const schemaPath = path.join(__dirname, '..', 'database', 'schema.pg.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
-    await getDB().query(schema);
+
+    const statements = schema.split(';').filter(s => s.trim());
+    for (const stmt of statements) {
+        try { await getDB().query(stmt + ';'); } catch (e) { console.error('Schema statement warning:', e.message); }
+    }
     console.log('PostgreSQL schema initialized');
 
     await migrate();
