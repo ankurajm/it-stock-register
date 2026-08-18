@@ -297,6 +297,26 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
     } catch (e) { console.error('Notifications table migration warning:', e.message); }
+
+    // Fix bogus admin passwords that were seeded with invalid placeholder hashes
+    try {
+        const bcrypt = require('bcryptjs');
+        const bogusHashes = [
+            '$2a$12$LJ3m4ys3GZvSHJba1b5OxuQpP8YfZ5YX5YX5YX5YX5YX5YX5YX5YX'
+        ];
+        const admin = await get(`SELECT id, password FROM users WHERE username = 'admin'`);
+        if (admin && bogusHashes.includes(admin.password)) {
+            const fixed = bcrypt.hashSync('admin123', 12);
+            await run(`UPDATE users SET password = $1 WHERE id = $2`, [fixed, admin.id]);
+            console.log('Admin password hash repaired (reset to admin123)');
+        }
+        const user = await get(`SELECT id, password FROM users WHERE username = 'user'`);
+        if (user && bogusHashes.includes(user.password)) {
+            const fixed = bcrypt.hashSync('user123', 12);
+            await run(`UPDATE users SET password = $1 WHERE id = $2`, [fixed, user.id]);
+            console.log('User password hash repaired (reset to user123)');
+        }
+    } catch (e) { console.error('Password repair migration warning:', e.message); }
 }
 
 module.exports = { getDB, run, get, all, transaction, initSchema };

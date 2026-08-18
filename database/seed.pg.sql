@@ -27,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_items_serial_number ON items(serial_number);
 CREATE INDEX IF NOT EXISTS idx_allocations_allocated_date ON allocations(allocated_date);
 
 -- Seed data (admin password: admin123, user password: user123) — CHANGE THESE ON FIRST LOGIN
-INSERT INTO users (username, password, role, initials) VALUES ('admin', '$2a$12$LJ3m4ys3GZvSHJba1b5OxuQpP8YfZ5YX5YX5YX5YX5YX5YX5YX5YX', 'admin', 'ADM') ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password, role, initials) VALUES ('admin', '$2a$12$miC5m5xRoOrPOQd.XQhAge8qiRzOShlTWBa5d0ZUioezKAMdtfDdS', 'admin', 'ADM') ON CONFLICT (username) DO NOTHING;
 INSERT INTO users (username, password, role, initials) VALUES ('user', '$2a$12$LJ3m4ys3GZvSHJba1b5OxuQpP8YfZ5YX5YX5YX5YX5YX5YX5YX5YX', 'user', 'USR') ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO categories (name, prefix) VALUES ('Laptop', 'LAP'), ('Desktop', 'DES'), ('Monitor', 'MON'), ('Printer', 'PRI'), ('Network Equipment', 'NET'), ('Accessories', 'ACC'), ('Mobile', 'MOB'), ('Tablet', 'TAB'), ('Other', 'OTH') ON CONFLICT (name) DO NOTHING;
