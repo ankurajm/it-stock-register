@@ -299,6 +299,16 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
     } catch (e) { console.error('Notifications table migration warning:', e.message); }
+
+    // Clean up old session table if it exists (was replaced by user_sessions)
+    try {
+        const oldSession = await get(`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'session')`);
+        const newSession = await get(`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_sessions')`);
+        if (oldSession && oldSession.exists && (!newSession || !newSession.exists)) {
+            await run(`DROP TABLE "session" CASCADE`, []);
+            console.log('Dropped old session table (replaced by user_sessions)');
+        }
+    } catch (e) { console.error('Session table cleanup warning:', e.message); }
 }
 
 module.exports = { getDB, run, get, all, transaction, initSchema };

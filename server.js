@@ -134,6 +134,9 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
     console.error('Server Error:', err.stack || err.message);
+    if (res.headersSent) {
+        return res.end();
+    }
     res.status(err.status || 500).render('error', { layout: false,
         message: 'Something went wrong. Please try again.',
         error: {}
