@@ -53,14 +53,10 @@
                     <input type="text" name="serial_number" class="form-control" value="<%= item ? item.serial_number : '' %>">
                     <div class="form-text">QR code will be auto-generated from serial number</div>
                 </div>
-                <div class="col-md-4" id="normalLocationGroup" style="<%= item && item.status === 'fixed' ? 'display:none' : '' %>">
-                    <label class="form-label">Location</label>
-                    <input type="text" name="location" class="form-control" value="<%= item ? item.location : '' %>" placeholder="Floor 3, Room 301">
-                </div>
-                <div class="col-md-4" id="fixedLocationGroup" style="<%= item && item.status === 'fixed' ? '' : 'display:none' %>">
-                    <label class="form-label">Fixed Location <span class="text-danger">*</span></label>
-                    <input type="text" name="location" id="fixedLocation" class="form-control" value="<%= item ? item.location : '' %>" placeholder="e.g. Exam Cell, Room 101" <%= item && item.status === 'fixed' ? 'required' : '' %>>
-                    <div class="form-text">Permanent installation location (will not be moved)</div>
+                <div class="col-md-4" id="locationGroup">
+                    <label class="form-label" id="locationLabel">Location</label>
+                    <input type="text" name="location" id="locationInput" class="form-control" value="<%= item ? item.location : '' %>" placeholder="Floor 3, Room 301">
+                    <div class="form-text" id="locationHelp">Physical location of the item</div>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Specifications</label>
@@ -157,10 +153,20 @@ document.getElementById('categorySelect').addEventListener('change', function() 
 
 document.getElementById('statusSelect').addEventListener('change', function() {
     const isFixed = this.value === 'fixed';
-    document.getElementById('normalLocationGroup').style.display = isFixed ? 'none' : '';
-    document.getElementById('fixedLocationGroup').style.display = isFixed ? '' : 'none';
-    const fixedInput = document.getElementById('fixedLocation');
-    if (fixedInput) fixedInput.required = isFixed;
+    const label = document.getElementById('locationLabel');
+    const input = document.getElementById('locationInput');
+    const help = document.getElementById('locationHelp');
+    if (isFixed) {
+        label.innerHTML = 'Fixed Location <span class="text-danger">*</span>';
+        input.placeholder = 'e.g. Exam Cell, Room 101';
+        input.required = true;
+        help.textContent = 'Permanent installation location (will not be moved)';
+    } else {
+        label.textContent = 'Location';
+        input.placeholder = 'Floor 3, Room 301';
+        input.required = false;
+        help.textContent = 'Physical location of the item';
+    }
 });
 </script>
 <% } %>

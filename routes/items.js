@@ -130,7 +130,10 @@ router.post('/add', requireAuth, requireAdmin, mutationLimiter, upload.single('i
         } catch (e) { /* QR generation failed silently */ }
 
         await run(`INSERT INTO items (asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes, image, qr_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [asset_tag, resolvedCategory, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status || 'available', condition || 'new', location, notes, image, qrCode]);
+            [asset_tag, resolvedCategory, brand, model, serial_number, specifications,
+             purchase_date || null, purchase_price ? parseFloat(purchase_price) : null,
+             vendor, warranty_end || null, status || 'available', condition || 'new',
+             location, notes, image, qrCode]);
 
         req.flash('success', 'Item ' + asset_tag + ' added successfully');
         res.redirect('/items');
@@ -187,7 +190,9 @@ router.post('/edit/:id', requireAuth, requireAdmin, mutationLimiter, upload.sing
         const { asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes } = req.body;
 
         let sql = `UPDATE items SET asset_tag=?, category=?, brand=?, model=?, serial_number=?, specifications=?, purchase_date=?, purchase_price=?, vendor=?, warranty_end=?, status=?, condition=?, location=?, notes=?, updated_at=CURRENT_TIMESTAMP`;
-        let params = [asset_tag, category, brand, model, serial_number, specifications, purchase_date, purchase_price, vendor, warranty_end, status, condition, location, notes];
+        let params = [asset_tag, category, brand, model, serial_number, specifications,
+            purchase_date || null, purchase_price ? parseFloat(purchase_price) : null,
+            vendor, warranty_end || null, status, condition, location, notes];
 
         if (req.file) {
             sql += `, image=?`;
