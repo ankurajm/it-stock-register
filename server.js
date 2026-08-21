@@ -60,6 +60,26 @@ if (!config.sessionSecret) {
     console.warn('WARNING: SESSION_SECRET not set — using random secret (sessions lost on restart). Set SESSION_SECRET in production for persistence.');
 }
 
+// Create session table before session middleware initializes
+(async () => {
+    if (process.env.DATABASE_URL) {
+        try {
+            const { getDB } = require('./config/db');
+            const db = getDB();
+            await db.query(`DROP TABLE IF EXISTS "session" CASCADE`);
+            await db.query(`DROP TABLE IF EXISTS "user_sessions" CASCADE`);
+            await db.query(`CREATE TABLE IF NOT EXISTS "user_sessions" (
+                "sid" varchar NOT NULL COLLATE "default",
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL,
+                CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
+            )`);
+            await db.query(`CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "user_sessions" ("expire")`);
+            console.log('Session table ready (user_sessions)');
+        } catch (e) { console.error('Session table init warning:', e.message); }
+    }
+})();
+
 app.use(session({
     store: (() => {
         if (process.env.DATABASE_URL) {

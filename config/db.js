@@ -103,6 +103,7 @@ async function transaction(callback) {
 async function initSchema() {
     if (schemaInitialized) return;
     schemaInitialized = true;
+
     const fs = require('fs');
     const schemaPath = path.join(__dirname, '..', 'database', 'schema.pg.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
@@ -299,20 +300,6 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
     } catch (e) { console.error('Notifications table migration warning:', e.message); }
-
-    // Clean up old session tables and ensure user_sessions exists
-    try {
-        await run(`DROP TABLE IF EXISTS "session" CASCADE`, []);
-        await run(`DROP TABLE IF EXISTS "user_sessions" CASCADE`, []);
-        await run(`CREATE TABLE "user_sessions" (
-            "sid" varchar NOT NULL COLLATE "default",
-            "sess" json NOT NULL,
-            "expire" timestamp(6) NOT NULL,
-            CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
-        )`, []);
-        await run(`CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "user_sessions" ("expire")`, []);
-        console.log('Session table ready (user_sessions)');
-    } catch (e) { console.error('Session table migration warning:', e.message); }
 }
 
 module.exports = { getDB, run, get, all, transaction, initSchema };
