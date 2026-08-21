@@ -7,6 +7,7 @@ const layouts = require('express-ejs-layouts');
 const os = require('os');
 const cron = require('node-cron');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { spawn } = require('child_process');
 const config = require('./config/app');
 const { initSchema } = require('./config/db');
@@ -44,6 +45,7 @@ app.use('/uploads', (req, res, next) => {
 }, express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 
 if (!config.sessionSecret) {
     console.warn('WARNING: SESSION_SECRET not set — using insecure fallback. Set SESSION_SECRET in production!');
@@ -53,10 +55,12 @@ app.use(session({
     store: (() => {
         if (process.env.DATABASE_URL) {
             try {
+                const { getDB } = require('./config/db');
                 const PgSession = require('connect-pg-simple')(session);
+                const store = new PgSession({ pool: getDB(), tableName: 'user_sessions', createTableIfMissing: true });
                 console.log('Using PostgreSQL session store');
-                return new PgSession({ conString: process.env.DATABASE_URL, createTableIfMissing: true, ssl: /localhost/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false } });
-            } catch (e) { console.warn('Failed to create PG session store, falling back to MemoryStore:', e.message); }
+                return store;
+            } catch (e) { console.error('Failed to create PG session store:', e.message); }
         }
         console.warn('Using MemoryStore (sessions lost on restart)');
         return undefined;

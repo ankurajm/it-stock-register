@@ -9,14 +9,16 @@ function tokensMatch(a, b) {
 }
 
 function csrfProtection(req, res, next) {
-    if (!req.session.csrfToken) {
-        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+    let csrfToken = req.cookies && req.cookies._csrf;
+    if (!csrfToken) {
+        csrfToken = crypto.randomBytes(32).toString('hex');
     }
-    res.locals.csrfToken = req.session.csrfToken;
+    res.cookie('_csrf', csrfToken, { httpOnly: false, sameSite: 'lax', secure: false, maxAge: 3600000 });
+    res.locals.csrfToken = csrfToken;
 
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.body && typeof req.body === 'object') {
-        const token = req.body._csrf || req.get('X-CSRF-Token');
-        if (!tokensMatch(token, req.session.csrfToken)) {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        const token = req.body && req.body._csrf || req.get('X-CSRF-Token');
+        if (!tokensMatch(token, csrfToken)) {
             req.flash('error', 'Session expired. Please refresh and try again.');
             return res.redirect(req.originalUrl || '/');
         }
@@ -25,8 +27,9 @@ function csrfProtection(req, res, next) {
 }
 
 function validateCsrf(req, res, next) {
-    const token = req.body._csrf || req.get('X-CSRF-Token');
-    if (!tokensMatch(token, req.session.csrfToken)) {
+    const csrfFromCookie = req.cookies && req.cookies._csrf;
+    const token = req.body && req.body._csrf || req.get('X-CSRF-Token');
+    if (!tokensMatch(token, csrfFromCookie)) {
         req.flash('error', 'Session expired. Please refresh and try again.');
         return res.redirect(req.originalUrl || '/');
     }
