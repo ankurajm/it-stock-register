@@ -57,11 +57,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 if (!config.sessionSecret) {
-    if (process.env.NODE_ENV === 'production') {
-        console.error('FATAL: SESSION_SECRET environment variable is required in production');
-        process.exit(1);
-    }
-    console.warn('WARNING: SESSION_SECRET not set — using random secret (sessions lost on restart)');
+    console.warn('WARNING: SESSION_SECRET not set — using random secret (sessions lost on restart). Set SESSION_SECRET in production for persistence.');
 }
 
 app.use(session({
