@@ -4,6 +4,7 @@ database.db
 database.db-shm
 database.db-wal
 server.err
+server.out
 favicon_io.zip
 uploads/*
 !uploads/.gitkeep
