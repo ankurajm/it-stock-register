@@ -1,0 +1,23 @@
+PostgreSQL pool created
+
+==================================================
+      IT STOCK REGISTER v1.0
+      Complete Asset Management System
+==================================================
+
+  Local:    http://localhost:4050
+  Network:  http://192.168.10.23:4050
+  DB:       PostgreSQL (Supabase)
+  Backup:   0 0 * * *
+
+==================================================
+  Press Ctrl+C to stop the server
+==================================================
+
+PostgreSQL schema initialized
+Database schema initialized
+[USER LOGIN] Attempt: admin
+[USER LOGIN] User found: yes role:admin
+[USER LOGIN] Password match: true
+[USER LOGIN] Credentials OK, calling session.regenerate
+[USER LOGIN] Session regenerated OK, setting user
