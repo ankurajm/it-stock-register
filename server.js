@@ -42,7 +42,7 @@ app.use('/uploads', (req, res, next) => {
     if (req.session && req.session.user) return next();
     return res.status(403).send('Access denied');
 }, express.static(path.join(__dirname, 'uploads')));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '1mb' }));
 
 if (!config.sessionSecret) {
