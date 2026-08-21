@@ -192,6 +192,7 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
         const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="employee_credentials.pdf"');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         doc.pipe(res);
 
         doc.fontSize(16).font('Helvetica-Bold').text('Employee Credentials', { align: 'center' });
@@ -274,6 +275,7 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename="employee_credentials.xlsx"');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         workbook.xlsx.write(res).then(() => res.end());
     } catch (err) {
         console.error('Export credentials Excel error:', err.message);

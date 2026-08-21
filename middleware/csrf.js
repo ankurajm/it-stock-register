@@ -13,7 +13,8 @@ function csrfProtection(req, res, next) {
     if (!csrfToken) {
         csrfToken = crypto.randomBytes(32).toString('hex');
     }
-    res.cookie('_csrf', csrfToken, { httpOnly: false, sameSite: 'lax', secure: false, maxAge: 3600000 });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('_csrf', csrfToken, { httpOnly: false, sameSite: 'lax', secure: isProd, maxAge: 3600000 });
     res.locals.csrfToken = csrfToken;
 
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {

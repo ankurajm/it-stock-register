@@ -30,7 +30,7 @@ router.post('/login', require('express-rate-limit')({
             return res.redirect('/login');
         }
         const pwMatch = await bcrypt.compare(password, user.password);
-        console.log('[USER LOGIN] Password match:', pwMatch);
+        if (process.env.NODE_ENV !== 'production') console.log('[USER LOGIN] Password match:', pwMatch);
         if (!pwMatch) {
             req.flash('error', 'Invalid username or password');
             logEvent(null, username || '', 'login_failed', req).catch(() => {});
@@ -80,7 +80,7 @@ router.post('/login/admin', require('express-rate-limit')({
             return res.redirect('/login/admin');
         }
         const pwMatch = await bcrypt.compare(password, user.password);
-        console.log('[ADMIN LOGIN] Password match:', pwMatch);
+        if (process.env.NODE_ENV !== 'production') console.log('[ADMIN LOGIN] Password match:', pwMatch);
         if (!pwMatch) {
             req.flash('error', 'Admin access denied. Invalid credentials.');
             logEvent(null, username || '', 'admin_login_failed', req).catch(() => {});
@@ -144,8 +144,14 @@ router.post('/change-password', requireAuth, require('express-rate-limit')({
         const hashed = bcrypt.hashSync(new_password, 12);
         await run(`UPDATE users SET password=? WHERE id=?`, [hashed, req.session.user.id]);
         logEvent(req.session.user.id, req.session.user.username, 'password_change', req).catch(() => {});
-        req.flash('success', 'Password changed successfully');
-        res.redirect('/');
+        req.session.regenerate((err) => {
+            if (err) {
+                req.flash('error', 'Failed to refresh session');
+                return res.redirect('/');
+            }
+            req.flash('success', 'Password changed successfully');
+            res.redirect('/');
+        });
     } catch (err) {
         console.error('Change password error:', err.message);
         res.render('change-password', { layout: false, error: 'Failed to change password' });

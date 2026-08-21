@@ -299,27 +299,6 @@ async function migrate() {
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_employee_id ON notifications(employee_id)`);
         await getDB().query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
     } catch (e) { console.error('Notifications table migration warning:', e.message); }
-
-    // Ensure default admin/user passwords are valid on every startup
-    try {
-        const bcrypt = require('bcryptjs');
-        const defaults = [
-            { username: 'admin', password: 'admin123', role: 'admin', initials: 'ADM' },
-            { username: 'user', password: 'user123', role: 'user', initials: 'USR' }
-        ];
-        for (const d of defaults) {
-            const existing = await get(`SELECT id, password FROM users WHERE username = $1`, [d.username]);
-            if (!existing) {
-                const hashed = bcrypt.hashSync(d.password, 12);
-                await run(`INSERT INTO users (username, password, role, initials) VALUES ($1, $2, $3, $4)`, [d.username, hashed, d.role, d.initials]);
-                console.log(`Default ${d.username} user created (${d.username} / ${d.password})`);
-            } else if (!bcrypt.compareSync(d.password, existing.password)) {
-                const hashed = bcrypt.hashSync(d.password, 12);
-                await run(`UPDATE users SET password = $1 WHERE id = $2`, [hashed, existing.id]);
-                console.log(`Password for ${d.username} repaired (reset to ${d.password})`);
-            }
-        }
-    } catch (e) { console.error('Password repair migration warning:', e.message); }
 }
 
 module.exports = { getDB, run, get, all, transaction, initSchema };

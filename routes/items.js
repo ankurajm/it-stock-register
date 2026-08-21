@@ -35,10 +35,11 @@ router.get('/', requireAuth, async (req, res) => {
         let params = [];
 
         if (search) {
-            const clause = ` AND (asset_tag LIKE ? OR brand LIKE ? OR model LIKE ? OR serial_number LIKE ?)`;
-            countQuery += clause;
+            const safeSearch = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+            const clause = ` AND (asset_tag ILIKE ? ESCAPE '\\' OR brand ILIKE ? ESCAPE '\\' OR model ILIKE ? ESCAPE '\\' OR serial_number ILIKE ? ESCAPE '\\')`;
+            countQuery += clause.replace(/ILIKE/g, 'LIKE');
             query += clause;
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            params.push(`%${safeSearch}%`, `%${safeSearch}%`, `%${safeSearch}%`, `%${safeSearch}%`);
         }
         if (category) {
             countQuery += ` AND category = ?`;
@@ -308,7 +309,7 @@ router.post('/bulk-clone', requireAuth, requireAdmin, async (req, res) => {
     } catch (err) {
         console.error('Bulk clone error:', err.message);
         const categories = await all(`SELECT * FROM categories ORDER BY name`);
-        res.render('items/bulk-clone', { error: 'Clone failed: ' + err.message, categories });
+        res.render('items/bulk-clone', { error: 'Clone failed. Please check your data and try again.', categories });
     }
 });
 

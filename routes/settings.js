@@ -41,7 +41,13 @@ router.post('/', requireAuth, requireAdmin, upload.single('school_logo'), valida
             const newPath = path.join(config.uploadDir, newName);
             const tempPath = req.file.path;
 
-            logoData = fs.readFileSync(tempPath).toString('base64');
+            const rawBuf = fs.readFileSync(tempPath);
+            if (rawBuf.length > 1 * 1024 * 1024) {
+                fs.unlinkSync(tempPath);
+                req.flash('error', 'Logo image must be under 1MB');
+                return res.redirect('/settings');
+            }
+            logoData = rawBuf.toString('base64');
 
             if (fs.existsSync(newPath)) fs.unlinkSync(newPath);
             fs.renameSync(tempPath, newPath);

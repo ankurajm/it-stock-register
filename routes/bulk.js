@@ -281,6 +281,7 @@ router.post('/users', requireAuth, requireAdmin, upload.single('file'), validate
 router.get('/template/items', requireAuth, requireAdmin, (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="items_template.csv"');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     const headers = ['asset_tag', 'category', 'brand', 'model', 'serial_number', 'specifications', 'purchase_date', 'purchase_price', 'vendor', 'warranty_end', 'status', 'condition', 'location', 'notes'];
     const example = ['LAP-0001', 'Laptop', 'Dell', 'Latitude 3420', 'SN001234', '16GB RAM, 512GB SSD', '2024-01-15', '65000', 'Dell Inc.', '2027-01-14', 'available', 'new', 'Store Room A', 'Office use'];
     res.send(headers.map(toCSVField).join(',') + '\n' + example.map(toCSVField).join(',') + '\n');
@@ -289,6 +290,7 @@ router.get('/template/items', requireAuth, requireAdmin, (req, res) => {
 router.get('/template/users', requireAuth, requireAdmin, (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="users_template.csv"');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     const headers = ['username', 'initials', 'role'];
     const example = ['john', 'JDU', 'user'];
     res.send(headers.join(',') + '\n' + example.join(',') + '\n');
@@ -401,6 +403,7 @@ router.post('/employees', requireAuth, requireAdmin, upload.single('file'), vali
 router.get('/template/employees', requireAuth, requireAdmin, (req, res) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="employees_template.csv"');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     const headers = ['Sl no', 'Designation', 'Name', 'Initial', 'Contact', 'Email', 'Class', 'Subject'];
     const example = ['1', 'Principal', 'Rajesh Sharma', 'PRP', '9876543210', 'principal@school.edu', '', ''];
     const example2 = ['2', 'Teacher', 'Sunita Verma', 'SNV', '9876543211', 'sunita@school.edu', 'I-A', 'Physics'];

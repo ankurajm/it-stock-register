@@ -111,6 +111,7 @@ async function generatePDF(data, columns, title, res) {
     const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/\s+/g, '_').toLowerCase()}.pdf"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     try {
         doc.pipe(res);
@@ -182,6 +183,7 @@ async function generateExcel(data, columns, title, res) {
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/\s+/g, '_').toLowerCase()}.xlsx"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     await workbook.xlsx.write(res);
     res.end();
 }
@@ -324,6 +326,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
 
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         const filename = 'items_record_' + (userInfo ? userInfo.username : req.session.user.username) + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
@@ -482,6 +485,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
 
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         const filename = 'no_dues_certificate_' + emp.username + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
@@ -703,7 +707,7 @@ router.get('/departments/excel', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/departments/:department/pdf', requireAuth, async (req, res) => {
+router.get('/departments/:department/pdf', requireAuth, requireAdmin, async (req, res) => {
     try {
         const dept = decodeURIComponent(req.params.department);
         const data = await all(`
@@ -724,7 +728,7 @@ router.get('/departments/:department/pdf', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/departments/:department/excel', requireAuth, async (req, res) => {
+router.get('/departments/:department/excel', requireAuth, requireAdmin, async (req, res) => {
     try {
         const dept = decodeURIComponent(req.params.department);
         const data = await all(`
@@ -810,7 +814,7 @@ router.get('/locations/excel', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/locations/:location/pdf', requireAuth, async (req, res) => {
+router.get('/locations/:location/pdf', requireAuth, requireAdmin, async (req, res) => {
     try {
         const loc = decodeURIComponent(req.params.location);
         const data = await all(`
@@ -832,7 +836,7 @@ router.get('/locations/:location/pdf', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/locations/:location/excel', requireAuth, async (req, res) => {
+router.get('/locations/:location/excel', requireAuth, requireAdmin, async (req, res) => {
     try {
         const loc = decodeURIComponent(req.params.location);
         const data = await all(`

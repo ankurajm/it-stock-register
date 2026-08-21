@@ -18,7 +18,16 @@ const PORT = config.port;
 const HOST = process.env.HOST || '127.0.0.1';
 
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "cdn.jsdelivr.net", "'unsafe-inline'"],
+            styleSrc: ["'self'", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.cdnfonts.com", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            fontSrc: ["'self'", "fonts.gstatic.com", "fonts.cdnfonts.com", "cdn.jsdelivr.net"],
+            connectSrc: ["'self'"]
+        }
+    },
     crossOriginEmbedderPolicy: false
 }));
 
@@ -48,7 +57,11 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 if (!config.sessionSecret) {
-    console.warn('WARNING: SESSION_SECRET not set — using insecure fallback. Set SESSION_SECRET in production!');
+    if (process.env.NODE_ENV === 'production') {
+        console.error('FATAL: SESSION_SECRET environment variable is required in production');
+        process.exit(1);
+    }
+    console.warn('WARNING: SESSION_SECRET not set — using random secret (sessions lost on restart)');
 }
 
 app.use(session({
@@ -65,7 +78,7 @@ app.use(session({
         console.warn('Using MemoryStore (sessions lost on restart)');
         return undefined;
     })(),
-    secret: config.sessionSecret || 'insecure-fallback-secret-change-me',
+    secret: config.sessionSecret || require('crypto').randomBytes(32).toString('hex'),
     resave: false,
     saveUninitialized: false,
     cookie: {
