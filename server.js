@@ -50,14 +50,25 @@ if (!config.sessionSecret) {
 }
 
 app.use(session({
+    store: (() => {
+        if (process.env.DATABASE_URL) {
+            try {
+                const PgSession = require('connect-pg-simple')(session);
+                console.log('Using PostgreSQL session store');
+                return new PgSession({ conString: process.env.DATABASE_URL, createTableIfMissing: true, ssl: /localhost/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false } });
+            } catch (e) { console.warn('Failed to create PG session store, falling back to MemoryStore:', e.message); }
+        }
+        console.warn('Using MemoryStore (sessions lost on restart)');
+        return undefined;
+    })(),
     secret: config.sessionSecret || 'insecure-fallback-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
         maxAge: 3600000,
         httpOnly: true,
-        sameSite: 'strict',
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production' && !/localhost/.test(process.env.DATABASE_URL || ''),
         rolling: true
     }
 }));
