@@ -66,7 +66,7 @@ app.use(session({
             try {
                 const { getDB } = require('./config/db');
                 const PgSession = require('connect-pg-simple')(session);
-                const store = new PgSession({ pool: getDB(), tableName: 'user_sessions', createTableIfMissing: true });
+                const store = new PgSession({ pool: getDB(), tableName: 'user_sessions', createTableIfMissing: false });
                 console.log('Using PostgreSQL session store');
                 return store;
             } catch (e) { console.error('Failed to create PG session store:', e.message); }
