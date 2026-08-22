@@ -56,7 +56,7 @@
                     <% } else { %>
                     <% logs.forEach(log => { %>
                     <tr>
-                        <td><small><%= new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></small></td>
+                        <td><small><%= fmtDate(log.created_at) %></small></td>
                         <td><strong><%= log.username || '-' %></strong></td>
                         <td>
                             <% if (log.event_type.includes('success')) { %>

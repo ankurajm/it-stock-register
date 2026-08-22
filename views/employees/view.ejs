@@ -23,7 +23,7 @@
                     <div class="col-6 col-md-3"><small class="text-muted d-block">Status</small><span class="badge bg-<%= employee.status === 'active' ? 'success' : 'secondary' %>"><%= employee.status %></span></div>
                     <div class="col-6 col-md-4"><small class="text-muted d-block">Email</small><span><%= employee.email || '-' %></span></div>
                     <div class="col-6 col-md-4"><small class="text-muted d-block">Phone</small><span><%= employee.phone || '-' %></span></div>
-                    <div class="col-6 col-md-4"><small class="text-muted d-block">Joining Date</small><span><%= employee.joining_date || '-' %></span></div>
+                    <div class="col-6 col-md-4"><small class="text-muted d-block">Joining Date</small><span><%= fmtDate(employee.joining_date) %></span></div>
                     <% if (employee.class_teacher) { %>
                     <div class="col-6 col-md-4"><small class="text-muted d-block">Class Teacher</small><span><%= employee.class_teacher %></span></div>
                     <% } %>
@@ -67,8 +67,8 @@
                 <tr>
                     <td class="fw-medium"><%= a.asset_tag || '-' %></td>
                     <td><%= a.category || '-' %></td>
-                    <td><%= a.allocated_date %></td>
-                    <td><%= a.return_date || '-' %></td>
+                    <td><%= fmtDate(a.allocated_date) %></td>
+                    <td><%= fmtDate(a.return_date) %></td>
                     <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
                 </tr>
                 <% }); %>

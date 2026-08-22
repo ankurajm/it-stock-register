@@ -30,8 +30,8 @@
                     <td class="fw-medium"><%= a.asset_tag || '-' %></td>
                     <td><%= a.category || '-' %></td>
                     <td><%= a.brand || '' %> <%= a.model || '' %></td>
-                    <td><%= a.allocated_date %></td>
-                    <td><%= a.return_date || '-' %></td>
+                    <td><%= fmtDate(a.allocated_date) %></td>
+                    <td><%= fmtDate(a.return_date) %></td>
                     <td><%= a.remarks || '-' %></td>
                     <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
                 </tr>

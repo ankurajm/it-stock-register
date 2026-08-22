@@ -28,7 +28,7 @@
                         <td class="fw-medium"><%= u.username %></td>
                         <td><%= u.initials || '-' %></td>
                         <td><span class="badge bg-<%= u.role === 'admin' ? 'danger' : 'primary' %>"><%= u.role %></span></td>
-                        <td><%= u.created_at %></td>
+                        <td><%= fmtDate(u.created_at) %></td>
                         <td>
                             <% if (u.password_change_requested) { %>
                             <span class="badge bg-warning text-dark">Requested</span>

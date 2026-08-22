@@ -45,7 +45,7 @@
                     <td><%= a.brand || '-' %></td>
                     <td><%= a.model || '-' %></td>
                     <td><code><%= a.serial_number || '-' %></code></td>
-                    <td><%= a.allocated_date %></td>
+                    <td><%= fmtDate(a.allocated_date) %></td>
                     <td><span class="badge bg-warning text-dark">Issued</span></td>
                 </tr>
                 <% }); %>
@@ -72,8 +72,8 @@
                 <tr>
                     <td class="fw-medium"><%= a.asset_tag || '-' %></td>
                     <td><%= a.category || '-' %></td>
-                    <td><%= a.allocated_date %></td>
-                    <td><%= a.return_date || '-' %></td>
+                    <td><%= fmtDate(a.allocated_date) %></td>
+                    <td><%= fmtDate(a.return_date) %></td>
                     <td><span class="badge bg-success">Returned</span></td>
                 </tr>
                 <% }); %>

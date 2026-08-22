@@ -24,7 +24,7 @@
                 <hr>
                 <div class="row g-3">
                     <div class="col-12"><small class="text-muted d-block">Issue Description</small><p><%= record.issue_description || 'No description provided' %></p></div>
-                    <div class="col-6 col-md-3"><small class="text-muted d-block">Issue Date</small><span><%= record.issue_date %></span></div>
+                    <div class="col-6 col-md-3"><small class="text-muted d-block">Issue Date</small><span><%= fmtDate(record.issue_date) %></span></div>
                     <div class="col-6 col-md-3"><small class="text-muted d-block">Vendor</small><span><%= record.vendor || '-' %></span></div>
                     <div class="col-6 col-md-3"><small class="text-muted d-block">Cost</small><span>&#8377;<%= record.cost || '-' %></span></div>
                     <div class="col-6 col-md-3"><small class="text-muted d-block">Status</small>
@@ -32,7 +32,7 @@
                         <% } else if (record.status === 'in-progress') { %><span class="badge bg-info">In Progress</span>
                         <% } else { %><span class="badge bg-danger">Pending</span><% } %>
                     </div>
-                    <div class="col-6 col-md-4"><small class="text-muted d-block">Resolution Date</small><span><%= record.resolution_date || '-' %></span></div>
+                    <div class="col-6 col-md-4"><small class="text-muted d-block">Resolution Date</small><span><%= fmtDate(record.resolution_date) %></span></div>
                 </div>
                 <% if (record.remarks) { %>
                 <hr>
@@ -45,9 +45,9 @@
         <div class="card mb-3">
             <div class="card-header"><i class="bi bi-clock me-1"></i> Timeline</div>
             <div class="card-body">
-                <div class="d-flex mb-2"><div class="me-3 text-success"><i class="bi bi-record-circle"></i></div><div><small class="d-block text-muted">Issue Reported</small><strong><%= record.issue_date %></strong></div></div>
+                <div class="d-flex mb-2"><div class="me-3 text-success"><i class="bi bi-record-circle"></i></div><div><small class="d-block text-muted">Issue Reported</small><strong><%= fmtDate(record.issue_date) %></strong></div></div>
                 <% if (record.status === 'resolved') { %>
-                <div class="d-flex mb-2"><div class="me-3 text-info"><i class="bi bi-record-circle"></i></div><div><small class="d-block text-muted">Resolved On</small><strong><%= record.resolution_date %></strong></div></div>
+                <div class="d-flex mb-2"><div class="me-3 text-info"><i class="bi bi-record-circle"></i></div><div><small class="d-block text-muted">Resolved On</small><strong><%= fmtDate(record.resolution_date) %></strong></div></div>
                 <% } %>
                 <div class="d-flex"><div class="me-3"><i class="bi bi-circle"></i></div><div><small class="d-block text-muted">Days Open</small><strong>
                     <% 

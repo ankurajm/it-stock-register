@@ -38,7 +38,7 @@
                 <% records.forEach(r => { %>
                 <tr>
                     <td class="fw-medium"><%= r.asset_tag || '-' %></td>
-                    <td><%= r.issue_date %></td>
+                    <td><%= fmtDate(r.issue_date) %></td>
                     <td class="d-none d-md-table-cell"><%= r.issue_description ? r.issue_description.substring(0, 40) + (r.issue_description.length > 40 ? '...' : '') : '-' %></td>
                     <td class="d-none d-lg-table-cell"><%= r.vendor || '-' %></td>
                     <td class="d-none d-lg-table-cell">&#8377;<%= r.cost || '-' %></td>

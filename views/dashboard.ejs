@@ -242,7 +242,7 @@
                         <td><%= item.brand || '-' %></td>
                         <td><%= item.model || '-' %></td>
                         <td><code><%= item.serial_number || '-' %></code></td>
-                        <td><%= item.warranty_end %></td>
+                        <td><%= fmtDate(item.warranty_end) %></td>
                         <td><span class="badge bg-<%= daysLeft <= 7 ? 'danger' : 'warning text-dark' %>"><%= daysLeft %> days</span></td>
                     </tr>
                     <% }); %>

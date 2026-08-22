@@ -53,7 +53,7 @@
                         <td><span class="badge bg-primary"><%= item.category %></span></td>
                         <td><%= item.brand || '' %> <%= item.model || '' %></td>
                         <td class="d-none d-md-table-cell"><code class="small"><%= item.serial_number || '-' %></code></td>
-                        <td><%= item.disposal_date ? new Date(item.disposal_date).toLocaleDateString('en-IN') : '-' %></td>
+                        <td><%= fmtDate(item.disposal_date) %></td>
                         <td><strong><%= item.destination_school || '-' %></strong></td>
                         <td class="d-none d-lg-table-cell"><%= item.received_by || '-' %></td>
                         <td class="d-none d-lg-table-cell"><%= item.created_by_name || '-' %></td>

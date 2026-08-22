@@ -31,7 +31,7 @@
                     <span class="badge bg-primary rounded-pill ms-1">New</span>
                 <% } %>
             </div>
-            <small class="text-muted"><%= new Date(notif.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></small>
+            <small class="text-muted"><%= fmtDate(notif.created_at) %></small>
         </div>
         <p class="mb-1 mt-2 text-muted small"><%= notif.message %></p>
         <% if (!notif.is_read) { %>

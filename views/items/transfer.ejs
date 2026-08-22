@@ -144,7 +144,7 @@
                 <div class="card-body">
                     <h6 class="card-title text-warning"><i class="bi bi-person-exclamation me-1"></i> Currently Allocated</h6>
                     <p class="mb-1"><strong><%= allocation.emp_name %></strong></p>
-                    <p class="mb-0 text-muted small">Allocated on: <%= allocation.allocated_date %></p>
+                    <p class="mb-0 text-muted small">Allocated on: <%= fmtDate(allocation.allocated_date) %></p>
                     <p class="text-muted small">The allocation will be closed automatically.</p>
                 </div>
             </div>

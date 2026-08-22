@@ -56,10 +56,10 @@
                             </div>
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Condition</small><span><%= item.condition || '-' %></span></div>
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Location</small><span><%= item.location || '-' %></span></div>
-                            <div class="col-6 col-md-3"><small class="text-muted d-block">Purchase Date</small><span><%= item.purchase_date || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Purchase Date</small><span><%= fmtDate(item.purchase_date) %></span></div>
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Purchase Price</small><span>&#8377;<%= item.purchase_price || '-' %></span></div>
                             <div class="col-6 col-md-3"><small class="text-muted d-block">Vendor</small><span><%= item.vendor || '-' %></span></div>
-                            <div class="col-6 col-md-3"><small class="text-muted d-block">Warranty End</small><span><%= item.warranty_end || '-' %></span></div>
+                            <div class="col-6 col-md-3"><small class="text-muted d-block">Warranty End</small><span><%= fmtDate(item.warranty_end) %></span></div>
                             <div class="col-12"><small class="text-muted d-block">Specifications</small><p class="mb-0"><%= item.specifications || '-' %></p></div>
                             <div class="col-12"><small class="text-muted d-block">Notes</small><p class="mb-0"><%= item.notes || '-' %></p></div>
                         </div>
@@ -81,7 +81,7 @@
                     <div class="card-body">
                         <p class="mb-1 fw-bold"><%= allocation.emp_name %></p>
                         <small class="text-muted"><%= allocation.emp_code %></small>
-                        <p class="mt-2 mb-0"><small>Since: <strong><%= allocation.allocated_date %></strong></small></p>
+                        <p class="mt-2 mb-0"><small>Since: <strong><%= fmtDate(allocation.allocated_date) %></strong></small></p>
                     </div>
                 </div>
                 <% } %>
@@ -97,8 +97,8 @@
                 <div class="card">
                     <div class="card-header"><i class="bi bi-clock me-1"></i> Timestamps</div>
                     <div class="card-body">
-                        <small class="text-muted d-block">Created: <%= item.created_at %></small>
-                        <small class="text-muted d-block">Updated: <%= item.updated_at || item.created_at %></small>
+                        <small class="text-muted d-block">Created: <%= fmtDate(item.created_at) %></small>
+                        <small class="text-muted d-block">Updated: <%= fmtDate(item.updated_at || item.created_at) %></small>
                     </div>
                 </div>
             </div>
@@ -121,8 +121,8 @@
                         <% if (allocationHistory) { allocationHistory.forEach(a => { %>
                         <tr>
                             <td class="fw-medium"><%= a.emp_name || '-' %> (<%= a.emp_code || '-' %>)</td>
-                            <td><%= a.allocated_date %></td>
-                            <td><%= a.return_date || '-' %></td>
+                            <td><%= fmtDate(a.allocated_date) %></td>
+                            <td><%= fmtDate(a.return_date) %></td>
                             <td><%= a.remarks || '-' %></td>
                             <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
                         </tr>
@@ -148,7 +148,7 @@
                         <% } %>
                         <% if (maintenanceLogs) { maintenanceLogs.forEach(m => { %>
                         <tr>
-                            <td><%= m.issue_date %></td>
+                            <td><%= fmtDate(m.issue_date) %></td>
                             <td><%= m.issue_description || '-' %></td>
                             <td><%= m.vendor || '-' %></td>
                             <td>&#8377;<%= m.cost || '-' %></td>
@@ -171,7 +171,7 @@
                     <tbody>
                         <% discardHistory.forEach(dh => { %>
                         <tr>
-                            <td><%= dh.action_date %></td>
+                            <td><%= fmtDate(dh.action_date) %></td>
                             <td><span class="badge bg-<%= dh.action_type === 'handed_over' ? 'info text-dark' : 'secondary' %>"><%= dh.action_type === 'handed_over' ? 'Handed Over' : 'Disposed' %></span></td>
                             <td><%= dh.destination_school || '-' %><% if (dh.destination_address) { %><br><small class="text-muted"><%= dh.destination_address %></small><% } %></td>
                             <td><%= dh.reason %></td>

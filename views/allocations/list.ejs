@@ -44,8 +44,8 @@
                     <td class="fw-medium"><%= a.asset_tag || '-' %></td>
                     <td><%= a.emp_name || '-' %></td>
                     <td><%= a.department || '-' %></td>
-                    <td><%= a.allocated_date %></td>
-                    <td><%= a.return_date || '-' %></td>
+                    <td><%= fmtDate(a.allocated_date) %></td>
+                    <td><%= fmtDate(a.return_date) %></td>
                     <td><span class="badge bg-<%= a.status === 'active' ? 'warning text-dark' : 'success' %>"><%= a.status %></span></td>
                     <td class="text-end">
                         <% if (a.status === 'active') { %>
@@ -58,7 +58,7 @@
                                         <div class="modal-header"><h6 class="modal-title">Return Item</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                                         <div class="modal-body">
                                             <p class="mb-1"><strong><%= a.asset_tag %></strong></p>
-                                            <small class="text-muted">Allocated to <%= a.emp_name %> on <%= a.allocated_date %></small>
+                                            <small class="text-muted">Allocated to <%= a.emp_name %> on <%= fmtDate(a.allocated_date) %></small>
                                             <div class="mt-3 mb-3">
                                                 <label class="form-label">Return Date</label>
                                                 <input type="date" name="return_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
