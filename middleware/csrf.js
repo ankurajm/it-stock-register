@@ -18,10 +18,14 @@ function csrfProtection(req, res, next) {
     res.locals.csrfToken = csrfToken;
 
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-        const token = req.body && req.body._csrf || req.get('X-CSRF-Token');
-        if (!tokensMatch(token, csrfToken)) {
-            req.flash('error', 'Session expired. Please refresh and try again.');
-            return res.redirect(req.originalUrl || '/');
+        // For multipart requests the body isn't parsed yet here (multer runs later),
+        // so defer validation to the local validateCsrf middleware (runs after multer).
+        if (!req.is('multipart/form-data')) {
+            const token = req.body && req.body._csrf || req.get('X-CSRF-Token');
+            if (!tokensMatch(token, csrfToken)) {
+                req.flash('error', 'Session expired. Please refresh and try again.');
+                return res.redirect(req.originalUrl || '/');
+            }
         }
     }
     next();
