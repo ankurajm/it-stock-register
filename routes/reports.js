@@ -145,6 +145,10 @@ async function generatePDF(data, columns, title, res) {
 
         let y = tableTop + 20;
         doc.font('Helvetica').fontSize(7);
+        if (data.length === 0) {
+            doc.fillColor('#666').fontSize(10).font('Helvetica').text('No records found.', 30, y + 10, { width: doc.page.width - 60, align: 'center' });
+            doc.fillColor('#000');
+        }
         for (const [rowIndex, row] of data.entries()) {
             if (y > doc.page.height - 80) {
                 addReportFooter(doc);
@@ -188,11 +192,17 @@ async function generateExcel(data, columns, title, res) {
         width: 20
     }));
 
-    data.forEach(row => {
-        const r = {};
-        columns.forEach(col => { r[col] = fmtDate(row[col]); });
-        sheet.addRow(r);
-    });
+    if (data.length === 0) {
+        const emptyRow = {};
+        columns.forEach((col, i) => { emptyRow[col] = i === 0 ? 'No records found.' : ''; });
+        sheet.addRow(emptyRow);
+    } else {
+        data.forEach(row => {
+            const r = {};
+            columns.forEach(col => { r[col] = fmtDate(row[col]); });
+            sheet.addRow(r);
+        });
+    }
 
     const headerRow = sheet.getRow(1);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
