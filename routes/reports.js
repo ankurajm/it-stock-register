@@ -9,6 +9,12 @@ const path = require('path');
 const fs = require('fs');
 const { registerFonts } = require('../utils/fonts');
 
+// Format DB Date objects as "Fri Aug 21 2026" (day + date), leave other values untouched
+function fmtDate(val) {
+    if (val instanceof Date) return val.toDateString();
+    return val;
+}
+
 router.get('/', requireAuth, async (req, res) => {
     try {
         const categories = await all(`SELECT DISTINCT name FROM categories ORDER BY name`);
@@ -151,7 +157,7 @@ async function generatePDF(data, columns, title, res) {
                 doc.rect(30, y - 2, doc.page.width - 60, 14).fillOpacity(0.05).fill('#f0f0f0').fillOpacity(1);
             }
             columns.forEach((col, i) => {
-                doc.fill('#000000').text(String(row[col] || ''), 30 + i * colWidth + 2, y, { width: colWidth - 4, align: 'left' });
+                doc.fill('#000000').text(String(fmtDate(row[col]) || ''), 30 + i * colWidth + 2, y, { width: colWidth - 4, align: 'left' });
             });
             y += 15;
         }
@@ -174,7 +180,11 @@ async function generateExcel(data, columns, title, res) {
         width: 20
     }));
 
-    data.forEach(row => sheet.addRow(row));
+    data.forEach(row => {
+        const r = {};
+        columns.forEach(col => { r[col] = fmtDate(row[col]); });
+        sheet.addRow(r);
+    });
 
     const headerRow = sheet.getRow(1);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -406,7 +416,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
                 const brandModel = (item.brand || '') + (item.model ? ' ' + item.model : '');
                 const vals = [item.asset_tag || '-', item.category || '-', brandModel || '-', item.serial_number || '-', item.allocated_date || '-', 'Issued'];
                 doc.fontSize(7).font('Helvetica');
-                vals.forEach((v, i) => doc.text(v, colX[i] + 4, y, { width: colW[i] - 8 }));
+                vals.forEach((v, i) => doc.text(String(fmtDate(v)), colX[i] + 4, y, { width: colW[i] - 8 }));
                 y += 16;
             });
             doc.y = y + 10;
@@ -444,7 +454,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
                 const brandModel = (item.brand || '') + (item.model ? ' ' + item.model : '');
                 const vals = [item.asset_tag || '-', item.category || '-', brandModel || '-', item.allocated_date || '-', item.return_date || '-', 'Returned'];
                 doc.fontSize(7).font('Helvetica');
-                vals.forEach((v, i) => doc.text(v, colX[i] + 4, y, { width: colW[i] - 8 }));
+                vals.forEach((v, i) => doc.text(String(fmtDate(v)), colX[i] + 4, y, { width: colW[i] - 8 }));
                 y += 16;
             });
             doc.y = y + 10;
@@ -565,7 +575,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
                 const brandModel = (item.brand || '') + (item.model ? ' ' + item.model : '');
                 const vals = [item.asset_tag || '-', item.category || '-', brandModel || '-', item.serial_number || '-', item.allocated_date || '-', 'Issued'];
                 doc.fontSize(7).font('Helvetica');
-                vals.forEach((v, i) => doc.text(v, colX[i] + 4, y, { width: colW[i] - 8 }));
+                vals.forEach((v, i) => doc.text(String(fmtDate(v)), colX[i] + 4, y, { width: colW[i] - 8 }));
                 y += 16;
             });
             doc.y = y + 10;
@@ -603,7 +613,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
                 const brandModel = (item.brand || '') + (item.model ? ' ' + item.model : '');
                 const vals = [item.asset_tag || '-', item.category || '-', brandModel || '-', item.allocated_date || '-', item.return_date || '-', 'Returned'];
                 doc.fontSize(7).font('Helvetica');
-                vals.forEach((v, i) => doc.text(v, colX[i] + 4, y, { width: colW[i] - 8 }));
+                vals.forEach((v, i) => doc.text(String(fmtDate(v)), colX[i] + 4, y, { width: colW[i] - 8 }));
                 y += 16;
             });
             doc.y = y + 10;
