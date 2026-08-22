@@ -134,6 +134,17 @@ async function initSchema() {
         console.log('Default user created (user / user123)');
     }
 
+    const existingTest = await get(`SELECT id FROM users WHERE username = $1`, ['TEST']);
+    if (!existingTest) {
+        const hashed = bcrypt.hashSync('test1234', 12);
+        await run(`INSERT INTO users (username, password, role, initials, name, emp_status) VALUES ($1, $2, $3, $4, $5, $6)`, ['TEST', hashed, 'TEST', 'user', 'TEST', 'active']);
+        console.log('TEST user created (TEST / test1234)');
+    } else {
+        const hashed = bcrypt.hashSync('test1234', 12);
+        await run(`UPDATE users SET password=$1, initials='TEST', name='TEST', role='user', emp_status='active' WHERE username='TEST'`, [hashed]);
+        console.log('TEST user ensured (TEST / test1234)');
+    }
+
     const existingCat = await get(`SELECT id FROM categories LIMIT 1`);
     if (!existingCat) {
         const defaultCategories = ['Laptop','Desktop','Monitor','Printer','Network Equipment','Accessories','Mobile','Tablet','Other'];
