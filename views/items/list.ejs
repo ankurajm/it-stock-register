@@ -102,9 +102,9 @@
                         <td><span class="badge bg-secondary"><%= item.category %></span></td>
                         <td><%= item.brand || '' %> <%= item.model || '' %></td>
                         <td class="d-none d-lg-table-cell"><code><%= item.serial_number || '-' %></code></td>
-                        <td class="d-none d-md-table-cell"><%= item.purchase_date || '-' %></td>
+                        <td class="d-none d-md-table-cell"><%= fmtDate(item.purchase_date) %></td>
                         <td class="d-none d-md-table-cell">
-                            <span class="<%= isExpiring ? 'text-danger fw-bold' : '' %>"><%= item.warranty_end || '-' %></span>
+                            <span class="<%= isExpiring ? 'text-danger fw-bold' : '' %>"><%= fmtDate(item.warranty_end) %></span>
                         </td>
                         <td>
                             <% if (item.status === 'available') { %><span class="badge bg-success">Available</span>

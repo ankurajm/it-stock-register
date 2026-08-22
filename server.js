@@ -47,6 +47,12 @@ app.set('layout', 'layout');
 app.set('trust proxy', 1);
 app.use(layouts);
 
+app.locals.fmtDate = (val) => {
+    if (!val) return '-';
+    const d = val instanceof Date ? val : new Date(val);
+    return isNaN(d.getTime()) ? String(val) : d.toDateString();
+};
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', (req, res, next) => {
     if (req.session && req.session.user) return next();

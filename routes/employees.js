@@ -191,7 +191,9 @@ router.get('/export/credentials/pdf', requireAuth, requireAdmin, async (req, res
 
         const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="employee_credentials.pdf"');
+        const empStamp = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});
+        const empFileStamp = `${empStamp.year}-${empStamp.month}-${empStamp.day}_${empStamp.hour}-${empStamp.minute}-${empStamp.second}`;
+        res.setHeader('Content-Disposition', `attachment; filename="employee_credentials_${empFileStamp}.pdf"`);
         res.setHeader('X-Content-Type-Options', 'nosniff');
         doc.pipe(res);
 
@@ -274,7 +276,9 @@ router.get('/export/credentials/excel', requireAuth, requireAdmin, async (req, r
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename="employee_credentials.xlsx"');
+        const exStamp = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});
+        const exFileStamp = `${exStamp.year}-${exStamp.month}-${exStamp.day}_${exStamp.hour}-${exStamp.minute}-${exStamp.second}`;
+        res.setHeader('Content-Disposition', `attachment; filename="employee_credentials_${exFileStamp}.xlsx"`);
         res.setHeader('X-Content-Type-Options', 'nosniff');
         workbook.xlsx.write(res).then(() => res.end());
     } catch (err) {

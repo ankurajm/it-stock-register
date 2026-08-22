@@ -92,7 +92,9 @@ router.get('/export', requireAuth, requireAdmin, async (req, res) => {
         });
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=activity_log.xlsx');
+        const ls = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});
+        const logStamp = `${ls.year}-${ls.month}-${ls.day}_${ls.hour}-${ls.minute}-${ls.second}`;
+        res.setHeader('Content-Disposition', `attachment; filename="activity_log_${logStamp}.xlsx"`);
         res.setHeader('X-Content-Type-Options', 'nosniff');
         await workbook.xlsx.write(res);
         res.end();

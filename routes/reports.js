@@ -14,6 +14,14 @@ function fmtDate(val) {
     if (val instanceof Date) return val.toDateString();
     return val;
 }
+function fileStamp() {
+    const now = new Date();
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(now).reduce((a, x) => (a[x.type] = x.value, a), {});
+    return `${p.year}-${p.month}-${p.day}_${p.hour}-${p.minute}-${p.second}`;
+}
+function datedFilename(base, ext) {
+    return `${base}_${fileStamp()}.${ext}`;
+}
 
 router.get('/', requireAuth, async (req, res) => {
     try {
@@ -116,7 +124,7 @@ function addReportFooter(doc) {
 async function generatePDF(data, columns, title, res) {
     const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/\s+/g, '_').toLowerCase()}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${datedFilename(title.replace(/\s+/g, '_').toLowerCase(), 'pdf')}"`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
     try {
@@ -192,7 +200,7 @@ async function generateExcel(data, columns, title, res) {
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/\s+/g, '_').toLowerCase()}.xlsx"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${datedFilename(title.replace(/\s+/g, '_').toLowerCase(), 'xlsx')}"`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     await workbook.xlsx.write(res);
     res.end();
@@ -337,7 +345,7 @@ router.get('/my-items/pdf', requireAuth, async (req, res) => {
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('X-Content-Type-Options', 'nosniff');
-        const filename = 'items_record_' + (userInfo ? userInfo.username : req.session.user.username) + '.pdf';
+        const filename = 'items_record_' + (userInfo ? userInfo.username : req.session.user.username) + '_' + fileStamp() + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
 
@@ -496,7 +504,7 @@ router.get('/no-dues/:empId/pdf', requireAuth, requireAdmin, async (req, res) =>
         doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'portrait' });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('X-Content-Type-Options', 'nosniff');
-        const filename = 'no_dues_certificate_' + emp.username + '.pdf';
+        const filename = 'no_dues_certificate_' + emp.username + '_' + fileStamp() + '.pdf';
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         doc.pipe(res);
 
